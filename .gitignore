@@ -1,4 +1,17 @@
-Informe_desarrollo.md
-PLAN.md
+# Build
 build/
+cmake-build-*/
+compile_commands.json
+
+# Object and library outputs
+*.o
+*.so
+*.a
+
+# Editor / OS
 .vscode/
+.DS_Store
+
+# Course documents (not published yet)
+PLAN.md
+Informe_desarrollo.md
