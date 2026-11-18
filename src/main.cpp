@@ -12,14 +12,17 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <string>
 #include <vector>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <game/World.h>
 #include <gl/Camera.h>
 #include <gl/Mesh.h>
 #include <gl/Shader.h>
+#include <level/Level.h>
 
 namespace {
 constexpr int kWindowWidth = 1280;
@@ -27,6 +30,7 @@ constexpr int kWindowHeight = 720;
 constexpr double kFixedStep = 1.0 / 120.0;
 constexpr double kMaxFrameTime = 0.25;
 constexpr float kMouseSensitivity = 0.1f;
+constexpr float kEyeHeight = 1.7f;
 
 const char *kVertexShader = R"(
 #version 330 core
@@ -38,26 +42,57 @@ uniform mat4 view;
 uniform mat4 projection;
 
 out vec3 vNormal;
+out vec3 vWorldPos;
 
 void main() {
+  vec4 world = model * vec4(aPosition, 1.0);
+  vWorldPos = world.xyz;
   vNormal = mat3(transpose(inverse(model))) * aNormal;
-  gl_Position = projection * view * model * vec4(aPosition, 1.0);
+  gl_Position = projection * view * world;
 }
 )";
 
 const char *kFragmentShader = R"(
 #version 330 core
 in vec3 vNormal;
+in vec3 vWorldPos;
 
 uniform vec3 color;
+uniform int unlit;
+
+// Point light taken from the first "light" line of the level. When the level
+// defines none, the game binds a default fill light above the scene.
+uniform vec3 lightPos;
+uniform vec3 lightColor;
+uniform float lightIntensity;
 
 out vec4 fragmentColor;
 
 void main() {
+  // Debug markers (the light itself) are drawn at full brightness.
+  if (unlit != 0) {
+    fragmentColor = vec4(color, 1.0);
+    return;
+  } // end if
+
+  // The level mesh is a closed shell viewed from the inside; Blender exports
+  // its normals pointing outward. Flip them on back faces so interior
+  // surfaces receive light without enabling face culling.
   vec3 normal = normalize(vNormal);
-  vec3 lightDirection = normalize(vec3(0.4, 0.8, 0.6));
+  if (!gl_FrontFacing)
+    normal = -normal;
+
+  vec3 toLight = lightPos - vWorldPos;
+  float dist = length(toLight);
+  vec3 lightDirection = toLight / max(dist, 1e-4);
+
   float diffuse = max(dot(normal, lightDirection), 0.0);
-  fragmentColor = vec4(color * (0.25 + 0.75 * diffuse), 1.0);
+  float attenuation = 1.0 / (1.0 + 0.02 * dist * dist);
+
+  vec3 ambient = color * 0.20;
+  vec3 direct =
+      color * lightColor * lightIntensity * diffuse * attenuation;
+  fragmentColor = vec4(ambient + direct, 1.0);
 }
 )";
 
@@ -79,23 +114,17 @@ void _MakeCube(std::vector<float> &positions, std::vector<float> &normals,
 
   const Face faces[6] = {
       // +X
-      {{1, 0, 0},
-       {{h, -h, h}, {h, -h, -h}, {h, h, -h}, {h, h, h}}},
+      {{1, 0, 0}, {{h, -h, h}, {h, -h, -h}, {h, h, -h}, {h, h, h}}},
       // -X
-      {{-1, 0, 0},
-       {{-h, -h, -h}, {-h, -h, h}, {-h, h, h}, {-h, h, -h}}},
+      {{-1, 0, 0}, {{-h, -h, -h}, {-h, -h, h}, {-h, h, h}, {-h, h, -h}}},
       // +Y
-      {{0, 1, 0},
-       {{-h, h, h}, {h, h, h}, {h, h, -h}, {-h, h, -h}}},
+      {{0, 1, 0}, {{-h, h, h}, {h, h, h}, {h, h, -h}, {-h, h, -h}}},
       // -Y
-      {{0, -1, 0},
-       {{-h, -h, -h}, {h, -h, -h}, {h, -h, h}, {-h, -h, h}}},
+      {{0, -1, 0}, {{-h, -h, -h}, {h, -h, -h}, {h, -h, h}, {-h, -h, h}}},
       // +Z
-      {{0, 0, 1},
-       {{-h, -h, h}, {h, -h, h}, {h, h, h}, {-h, h, h}}},
+      {{0, 0, 1}, {{-h, -h, h}, {h, -h, h}, {h, h, h}, {-h, h, h}}},
       // -Z
-      {{0, 0, -1},
-       {{h, -h, -h}, {-h, -h, -h}, {-h, h, -h}, {h, h, -h}}}};
+      {{0, 0, -1}, {{h, -h, -h}, {-h, -h, -h}, {-h, h, -h}, {h, h, -h}}}};
 
   positions.clear();
   normals.clear();
@@ -134,9 +163,8 @@ int main() {
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
 
-  GLFWwindow *window =
-      glfwCreateWindow(kWindowWidth, kWindowHeight, "Arena FPS", nullptr,
-                       nullptr);
+  GLFWwindow *window = glfwCreateWindow(kWindowWidth, kWindowHeight,
+                                        "Arena FPS", nullptr, nullptr);
   if (window == nullptr) {
     std::cerr << "Could not create the OpenGL 3.3 window" << std::endl;
     glfwTerminate();
@@ -156,9 +184,25 @@ int main() {
   glEnable(GL_DEPTH_TEST);
   glClearColor(0.07f, 0.08f, 0.10f, 1.0f);
 
+  // Test level
+  level::Level devlevel;
+  std::string error;
+  if (!devlevel.Load("levels/dev.lvl", &error)) {
+    std::cerr << "Could not load the level: " << error << std::endl;
+    glfwDestroyWindow(window);
+    glfwTerminate();
+    return (EXIT_FAILURE);
+  }
+
+  // Runtime state derived from the level data. The level itself stays
+  // immutable, so restarting only requires calling Initialize again.
+  game::World world;
+  world.Initialize(devlevel);
+
   // GPU resources. They must be released before the GL context is destroyed.
   gl::Shader shader;
   gl::Mesh cube;
+  gl::Mesh levelMesh;
 
   if (!shader.LoadFromSource(kVertexShader, kFragmentShader)) {
     std::cerr << "Could not build the cube shader" << std::endl;
@@ -180,8 +224,22 @@ int main() {
     return (EXIT_FAILURE);
   } // end if
 
-  // First-person camera: eye height 1.7 m, looking slightly down at the cube.
-  gl::Camera camera(glm::vec3(0.0f, 1.7f, 3.0f), -90.0f, -7.0f);
+  // Level test
+  if (!levelMesh.Upload(devlevel.mesh.Positions, devlevel.mesh.Normals,
+                        devlevel.mesh.Indices)) {
+    std::cerr << "Could not upload the level mesh" << std::endl;
+    levelMesh.Destroy();
+    cube.Destroy();
+    shader.Destroy();
+    glfwDestroyWindow(window);
+    glfwTerminate();
+    return (EXIT_FAILURE);
+  }
+
+  // First-person camera: the level stores the feet position, the camera sits
+  // at eye height above it.
+  gl::Camera camera(world.playerPosition + glm::vec3(0.0f, kEyeHeight, 0.0f),
+                    -90.0f, 0.0f);
 
   // Mouse capture: only while playing. ESC releases it, click recaptures.
   bool cursorCaptured = true;
@@ -200,8 +258,7 @@ int main() {
     glfwPollEvents();
 
     // Toggle mouse capture (the game state machine will own this later).
-    if (cursorCaptured &&
-        glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+    if (cursorCaptured && glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
       cursorCaptured = false;
       glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     } else if (!cursorCaptured &&
@@ -241,34 +298,60 @@ int main() {
     accumulator += frameTime;
 
     while (accumulator >= kFixedStep) {
-      // TODO(hito 3): update player movement with kFixedStep.
-      // TODO(hito 4): resolve collisions with kFixedStep.
-      // TODO(hito 6): update weapons, projectiles and damage.
+      // TODO(3): update player movement with kFixedStep.
+      // TODO(4): resolve collisions with kFixedStep.
+      // TODO(6): update weapons, projectiles and damage.
       accumulator -= kFixedStep;
     } // end while
+
+    // The simulation owns the feet position; the camera only reads it.
+    camera.SetPosition(world.playerPosition +
+                       glm::vec3(0.0f, kEyeHeight, 0.0f));
 
     int width = 0, height = 0;
     glfwGetFramebufferSize(window, &width, &height);
     glViewport(0, 0, width, (height > 0) ? height : 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glm::mat4 model =
-        glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 1.0f, -3.0f));
-    model = glm::rotate(model, glm::radians(30.0f),
-                        glm::vec3(0.0f, 1.0f, 0.0f));
-    model = glm::rotate(model, glm::radians(20.0f),
-                        glm::vec3(1.0f, 0.0f, 0.0f));
     shader.Use();
-    shader.SetMat4("model", model);
+
+    // Bind the level's point light. Without a "light" line in the level, use a
+    // neutral fill light above the scene.
+    if (!devlevel.lights.empty()) {
+      const level::Light &light = devlevel.lights.front();
+      shader.SetVec3("lightPos", light.pos);
+      shader.SetVec3("lightColor", light.color);
+      shader.SetFloat("lightIntensity", light.intensity);
+    } else {
+      shader.SetVec3("lightPos", glm::vec3(0.0f, 10.0f, 0.0f));
+      shader.SetVec3("lightColor", glm::vec3(1.0f));
+      shader.SetFloat("lightIntensity", 1.0f);
+    } // end if
+
+    shader.SetMat4("model",
+                   glm::mat4(1.0f)); // level is authored in world coords
     shader.SetMat4("view", camera.GetViewMatrix());
     shader.SetMat4("projection", camera.GetProjectionMatrix(width, height));
-    shader.SetVec3("color", glm::vec3(0.85f, 0.45f, 0.20f));
+    shader.SetVec3("color", glm::vec3(0.55f, 0.57f, 0.60f));
+    shader.SetInt("unlit", 0);
 
-    cube.Draw();
+    levelMesh.Draw();
+
+    // Debug marker at the level's light position: a small unlit cube.
+    if (!devlevel.lights.empty()) {
+      const level::Light &light = devlevel.lights.front();
+      glm::mat4 marker = glm::translate(glm::mat4(1.0f), light.pos);
+      marker = glm::scale(marker, glm::vec3(0.25f));
+      shader.SetMat4("model", marker);
+      shader.SetVec3("color", light.color);
+      shader.SetInt("unlit", 1);
+      // cube.Draw();
+    } // end if
 
     glfwSwapBuffers(window);
   } // end while
 
+  levelMesh.Destroy();
   cube.Destroy();
   shader.Destroy();
   glfwDestroyWindow(window);

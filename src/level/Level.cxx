@@ -154,8 +154,8 @@ bool level::Level::Load(const std::string &lvlPath, std::string *error) {
                       "brush needs exactly minX minY minZ maxX maxY maxZ"));
       if (brush.Min.x > brush.Max.x || brush.Min.y > brush.Max.y ||
           brush.Min.z > brush.Max.z)
-        return (_Fail(error, lvlPath, lineNumber,
-                      "brush min is greater than max"));
+        return (
+            _Fail(error, lvlPath, lineNumber, "brush min is greater than max"));
       parsed.brushes.push_back(brush);
 
     } else if (instruction == "door") {
@@ -169,8 +169,8 @@ bool level::Level::Load(const std::string &lvlPath, std::string *error) {
     } else if (instruction == "key") {
       KeyPickup key;
       if (!_ReadInt(line, key.id) || !_ReadVec3(line, key.pos) || !_AtEnd(line))
-        return (_Fail(error, lvlPath, lineNumber,
-                      "key needs exactly keyId x y z"));
+        return (
+            _Fail(error, lvlPath, lineNumber, "key needs exactly keyId x y z"));
       if (key.id < 0)
         return (_Fail(error, lvlPath, lineNumber,
                       "key id must be zero or greater"));
@@ -271,6 +271,7 @@ bool level::Level::Load(const std::string &lvlPath, std::string *error) {
     parsed.brushes[door.brushIndex].doorKey = door.keyId;
   } // end for
 
+  // Move parsed level to the object that called the method
   *this = std::move(parsed);
   return (true);
 }
