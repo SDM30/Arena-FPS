@@ -6,6 +6,7 @@
 // (see PLAN.md, sections 5 and 8).
 // =========================================================================
 
+#include <cstddef>
 #include <glad/gl.h>
 
 #include <GLFW/glfw3.h>
@@ -254,6 +255,9 @@ int main() {
   double previousTime = glfwGetTime();
   double accumulator = 0.0;
 
+  // Debug renders: local until debug module
+  bool showCollision = false;
+  bool showCollisionKeyDown = false;
   while (!glfwWindowShouldClose(window)) {
     glfwPollEvents();
 
@@ -288,6 +292,12 @@ int main() {
                          -deltaY * kMouseSensitivity);
       } // end if
     } // end if
+
+    // Debug renders
+    const bool down = glfwGetKey(window, GLFW_KEY_F1) == GLFW_PRESS;
+    if (down && !showCollisionKeyDown)
+      showCollision = !showCollision;
+    showCollisionKeyDown = down;
 
     // Fixed timestep: simulate in constant increments, render whenever we can.
     const double now = glfwGetTime();
@@ -336,7 +346,31 @@ int main() {
     shader.SetInt("unlit", 0);
 
     levelMesh.Draw();
+    
+    if (showCollision) {
+      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+      glDisable(GL_DEPTH_TEST);
+      shader.SetInt("unlit", 1);
+      shader.SetVec3("color", glm::vec3(1.0f));
 
+      for (std::size_t i = 0; i < devlevel.brushes.size(); ++i) {
+        if (world.doorOpen[i])
+          continue;
+
+        const level::Brush &brush = devlevel.brushes[i];
+        const glm::vec3 center = (brush.Min + brush.Max) * 0.5f;
+        const glm::vec3 size = brush.Max - brush.Min;
+
+        glm::mat4 model = glm::translate(glm::mat4(1.0f), center);
+        model = glm::scale(model, size);
+        shader.SetMat4("model", model);
+        cube.Draw();
+      }
+
+      glEnable(GL_DEPTH_TEST);
+      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
+    
     // Debug marker at the level's light position: a small unlit cube.
     if (!devlevel.lights.empty()) {
       const level::Light &light = devlevel.lights.front();
