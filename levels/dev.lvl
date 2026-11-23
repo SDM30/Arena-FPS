@@ -33,6 +33,17 @@ brush   6 0 -11      6.5 2 -8
 brush   1 0 -8       6 2 -7.5
 # 14 x=1, normal +X
 brush   1 0 -8       1.5 2 -3
+# 15 door panel across the central corridor
+brush  -1 0 -6.5     1 2 -6
 
-exit -1 0 -1  1 1 1
-light 0 2 -4  1 1 1  1.0
+# Key before the door, in the central corridor.
+key 1 0 0.5 -4.5
+
+# Door needs key id 1. Traps: one floor and one wall surface.
+trap 1 10
+trap 6 10
+trap 7 10
+door 15 1
+
+exit -1 0 -1  1 2 0
+light 0 2 -5  1 1 1  1.0
