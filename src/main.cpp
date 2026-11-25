@@ -10,6 +10,7 @@
 
 #include <GLFW/glfw3.h>
 
+#include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <string>
@@ -83,7 +84,7 @@ int main() {
 
   // First-person camera: the level stores the feet position, the camera sits
   // at eye height above it.
-  gl::Camera camera(world.playerPosition + glm::vec3(0.0f, kEyeHeight, 0.0f),
+  gl::Camera camera(world.PlayerFeet() + glm::vec3(0.0f, kEyeHeight, 0.0f),
                     -90.0f, 0.0f);
 
   // Mouse capture: only while playing. ESC releases it, click recaptures.
@@ -165,14 +166,15 @@ int main() {
         accumulator += frameTime;
 
         while (accumulator >= kFixedStep) {
-          // TODO(3): update player movement with kFixedStep.
-          // TODO(4): resolve collisions with kFixedStep.
+          // TODO(3): player input and horizontal movement.
+          // TODO(4): horizontal collision resolution.
           // TODO(6): update weapons, projectiles and damage.
+          world.Update(static_cast<float>(kFixedStep));
           accumulator -= kFixedStep;
         } // end while
 
         // The simulation owns the feet position; the camera only reads it.
-        camera.SetPosition(world.playerPosition +
+        camera.SetPosition(world.PlayerFeet() +
                            glm::vec3(0.0f, kEyeHeight, 0.0f));
 
         int width = 0, height = 0;
@@ -181,6 +183,13 @@ int main() {
         render::Options options;
         options.showCollision = showCollision;
         renderer.Draw(camera, devlevel, world, width, height, options);
+
+        char title[128];
+        std::snprintf(title, sizeof(title),
+                      "Arena FPS | feet y=%.2f | vy=%.2f | %s",
+                      world.PlayerFeet().y, world.player.Velocity.y,
+                      world.player.OnGround ? "grounded" : "airborne");
+        glfwSetWindowTitle(window, title);
 
         glfwSwapBuffers(window);
       } // end while

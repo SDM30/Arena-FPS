@@ -5,6 +5,8 @@
 #define __game__World__h__
 
 #include <level/Level.h>
+#include <physics/CollisionWorld.h>
+#include <physics/Physics.h>
 
 #include <glm/glm.hpp>
 
@@ -12,10 +14,11 @@
 
 namespace game {
 struct World {
-  // Feet position of the player. The camera is derived from it by adding the
-  // eye height, so physics works with the ground point and the renderer with
-  // the eye.
-  glm::vec3 playerPosition{0.0f};
+  // Moving player body. Position is the center of its AABB.
+  physics::Body player;
+
+  // Static collision geometry copied from the level brushes.
+  physics::CollisionWorld collision;
 
   // Runtime flags, one entry per level definition. The level itself stays
   // immutable; restarting it only requires calling Initialize again.
@@ -28,6 +31,18 @@ struct World {
    * Level::Load and again to restart the level; it never reads files.
    */
   void Initialize(const level::Level &level);
+
+  /**
+   * Feet position derived from the body center. The camera sits at eye height
+   * above this point.
+   */
+  glm::vec3 PlayerFeet() const;
+
+  /**
+   * Advances the player by one fixed step. Input and game rules will be added
+   * in the movement milestone.
+   */
+  void Update(float dt);
 };
 } // namespace game
 

@@ -52,6 +52,7 @@ add_executable(
   level/ObjLoader.cpp
   level/Level.cxx
   game/World.cxx
+  physics/CollisionWorld.cxx
   render/SceneRenderer.cpp
 )
 target_include_directories(arena PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
