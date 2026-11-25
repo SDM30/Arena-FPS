@@ -1,0 +1,36 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+hide circle
+left to right direction
+
+class Camera {
+  + Fov : float
+  + Near : float
+  + Far : float
+  - Position : vec3
+  - Yaw : float
+  - Pitch : float
+  + GetForward() : vec3
+  + GetViewMatrix() : mat4
+  + GetProjectionMatrix(aspect) : mat4
+}
+
+class Shader {
+  - Program : uint
+  + LoadFromFiles(vs, fs) : bool
+  + Use() : void
+  + SetMat4(name, value) : void
+  + SetVec3(name, value) : void
+}
+
+class Mesh {
+  - VAO : uint
+  - VBO : uint
+  - EBO : uint
+  - IndexCount : int
+  + Upload(positions, normals, indices) : bool
+  + Draw() : void
+}
+@enduml

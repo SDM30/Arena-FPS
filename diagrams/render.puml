@@ -1,0 +1,23 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+hide circle
+left to right direction
+
+package "render" {
+  class Options <<struct>> {
+    + showCollision : bool
+  }
+
+  class SceneRenderer {
+    - Shader : Shader
+    - Cube : Mesh
+    - LevelMesh : Mesh
+    + Initialize(level) : bool
+    + Draw(camera, level, world, width, height, options) : void
+  }
+}
+
+SceneRenderer ..> Options : configura
+@enduml

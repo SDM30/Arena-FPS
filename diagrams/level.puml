@@ -1,0 +1,64 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+hide circle
+left to right direction
+
+class ObjMesh <<struct>> {
+  + positions : float[]
+  + normals : float[]
+  + indices : uint[]
+}
+
+class Brush <<struct>> {
+  + min : vec3
+  + max : vec3
+  + trapDps : int
+  + doorKey : int
+  + enabled : bool
+}
+
+class KeyPickup <<struct>> {
+  + id : int
+  + pos : vec3
+  + taken : bool
+}
+
+class EnemySpawn <<struct>> {
+  + type : int
+  + spawn : vec3
+  + pEnd : vec3
+}
+
+class Light <<struct>> {
+  + pos : vec3
+  + color : vec3
+  + intensity : float
+}
+
+class ExitZone <<struct>> {
+  + min : vec3
+  + max : vec3
+  + nextLevel : string
+}
+
+class Level <<struct>> {
+  + basePath : string
+  + mesh : ObjMesh
+  + brushes : Brush[]
+  + keys : KeyPickup[]
+  + enemies : EnemySpawn[]
+  + lights : Light[]
+  + exits : ExitZone[]
+  + playerSpawn : vec3
+  + Load(lvlPath) : bool
+}
+
+Level *-- ObjMesh : contiene
+Level *-- "0..*" Brush : contiene
+Level *-- "0..*" KeyPickup : contiene
+Level *-- "0..*" EnemySpawn : contiene
+Level *-- "0..*" Light : contiene
+Level *-- "0..*" ExitZone : contiene
+@enduml

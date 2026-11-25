@@ -1,0 +1,14 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+hide circle
+
+package "ui" {
+  class Hud {
+    - initialized : bool
+    + Initialize(window) : bool
+    + Render(world) : void
+  }
+}
+@enduml

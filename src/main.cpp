@@ -93,7 +93,7 @@ int main() {
   // Loads first level
   level::Level loadedLevel;
   std::string error;
-  if (!loadedLevel.Load("levels/level2.lvl", &error)) {
+  if (!loadedLevel.Load("levels/level1.lvl", &error)) {
     std::cerr << "Could not load the level: " << error << std::endl;
     glfwDestroyWindow(window);
     glfwTerminate();

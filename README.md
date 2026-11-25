@@ -68,6 +68,44 @@ src/
 levels/           Geometry and metadata for the levels
 ```
 
+## Class diagrams
+
+### gl
+
+![gl](diagrams/gl.png)
+
+Source: [`diagrams/gl.puml`](diagrams/gl.puml)
+
+### level
+
+![level](diagrams/level.png)
+
+Source: [`diagrams/level.puml`](diagrams/level.puml)
+
+### physics
+
+![physics](diagrams/physics.png)
+
+Source: [`diagrams/physics.puml`](diagrams/physics.puml)
+
+### game
+
+![game](diagrams/game.png)
+
+Source: [`diagrams/game.puml`](diagrams/game.puml)
+
+### render
+
+![render](diagrams/render.png)
+
+Source: [`diagrams/render.puml`](diagrams/render.puml)
+
+### ui
+
+![ui](diagrams/ui.png)
+
+Source: [`diagrams/ui.puml`](diagrams/ui.puml)
+
 ## External / vendored dependencies
 
 See `src/third_party/README.md` for the origin, version and license of each

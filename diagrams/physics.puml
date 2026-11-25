@@ -1,0 +1,69 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+hide circle
+left to right direction
+
+class Body <<struct>> {
+  + position : vec3
+  + velocity : vec3
+  + halfExtents : vec3
+  + onGround : bool
+}
+
+class Aabb <<struct>> {
+  + min : vec3
+  + max : vec3
+}
+
+class Collider <<struct>> {
+  + box : Aabb
+  + brushIndex : int
+  + enabled : bool
+}
+
+class Contact <<struct>> {
+  + brushIndex : int
+  + normal : vec3
+  + depth : float
+}
+
+class MoveResult <<struct>> {
+  + hitGround : bool
+  + hitCeiling : bool
+  + hitWall : bool
+  + contacts : Contact[]
+}
+
+class Ray <<struct>> {
+  + origin : vec3
+  + direction : vec3
+  + maxDistance : float
+}
+
+class RayHit <<struct>> {
+  + hit : bool
+  + distance : float
+  + point : vec3
+  + normal : vec3
+  + brushIndex : int
+}
+
+class CollisionWorld {
+  - Colliders : Collider[]
+  + Build(brushes) : void
+  + Move(body, delta) : MoveResult
+  + Raycast(ray) : RayHit
+  + RaycastAabb(ray, box) : bool
+}
+
+CollisionWorld *-- "0..*" Collider : contiene
+MoveResult o-- "0..*" Contact : agrega
+CollisionWorld ..> Body : desplaza
+CollisionWorld ..> MoveResult : produce
+CollisionWorld ..> Ray : recibe
+CollisionWorld ..> RayHit : produce
+CollisionWorld ..> Aabb : calcula
+Body ..> Aabb : proyecta
+@enduml

@@ -1,0 +1,109 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+hide circle
+left to right direction
+
+package "game" {
+  enum EnemyType {
+    Melee
+    Ranged
+    Tank
+  }
+
+  enum EnemyState {
+    Patrol
+    Chase
+    Attack
+  }
+
+  enum GameState {
+    Playing
+    PlayerDead
+  }
+
+  class Health <<struct>> {
+    + current : int
+    + maximum : int
+    + IsAlive() : bool
+    + ApplyDamage(amount) : int
+  }
+
+  class EnemyStats <<struct>> {
+    + moveSpeed : float
+    + sightRange : float
+    + attackRange : float
+    + attackInterval : float
+    + maxHealth : int
+    + damage : int
+  }
+
+  class Enemy <<struct>> {
+    + type : EnemyType
+    + stats : EnemyStats
+    + body : Body
+    + health : Health
+    + state : EnemyState
+    + patrolStart : vec3
+    + patrolEnd : vec3
+    + Update(player, collision, dt) : int
+  }
+
+  class Input <<struct>> {
+    + wishDir : vec3
+    + jumpPressed : bool
+    + firePressed : bool
+    + aimOrigin : vec3
+    + aimDirection : vec3
+  }
+
+  class MovementConfig <<struct>> {
+    + maxSpeed : float
+    + groundAccelerate : float
+    + airAccelerate : float
+    + friction : float
+    + jumpSpeed : float
+    + autoBhop : bool
+    + freeMove : bool
+  }
+
+  class QPlayerMovement {
+    + Config : MovementConfig
+    + Step(body, input, collision, dt) : void
+  }
+
+  class WeaponState <<struct>> {
+    + cooldown : float
+    + fireInterval : float
+    + damage : int
+    + range : float
+    + lastHit : RayHit
+  }
+
+  class World <<struct>> {
+    + state : GameState
+    + player : Body
+    + playerHealth : Health
+    + collision : CollisionWorld
+    + movement : QPlayerMovement
+    + weapon : WeaponState
+    + enemies : Enemy[]
+    + nextLevel : string
+    + Initialize(level) : void
+    + Update(dt, input, level) : void
+  }
+}
+
+World *-- Health : contiene
+World *-- QPlayerMovement : contiene
+World *-- WeaponState : contiene
+World *-- "0..*" Enemy : contiene
+QPlayerMovement *-- MovementConfig : contiene
+Enemy *-- EnemyStats : contiene
+Enemy *-- Health : contiene
+Enemy --> EnemyType : tipo
+Enemy --> EnemyState : estado
+World --> GameState : estado
+World ..> Input : recibe
+@enduml
