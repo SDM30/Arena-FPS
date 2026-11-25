@@ -13,7 +13,7 @@
 
 namespace level {
 struct Brush {
-  glm::vec3 Min{0.0f}, Max{0.0f};
+  glm::vec3 min{0.0f}, max{0.0f};
   int trapDps = 0;
   // -1 means "not a door".
   int doorKey = -1;
@@ -42,9 +42,9 @@ struct Light {
 };
 
 struct ExitZone {
-  glm::vec3 Min{0.0f}, Max{0.0f};
+  glm::vec3 min{0.0f}, max{0.0f};
   // Level file to load after touching this exit. Empty means "no next level".
-  std::string NextLevel;
+  std::string nextLevel;
 };
 
 struct Level {

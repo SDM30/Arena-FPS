@@ -16,10 +16,10 @@ void physics::CollisionWorld::Build(
 
   for (std::size_t i = 0; i < brushes.size(); ++i) {
     Collider collider;
-    collider.Box.Min = brushes[i].Min;
-    collider.Box.Max = brushes[i].Max;
-    collider.BrushIndex = static_cast<int>(i);
-    collider.Enabled = true;
+    collider.box.min = brushes[i].min;
+    collider.box.max = brushes[i].max;
+    collider.brushIndex = static_cast<int>(i);
+    collider.enabled = true;
     this->Colliders.push_back(collider);
   } // end for
 }
@@ -29,7 +29,7 @@ void physics::CollisionWorld::SetEnabled(int brushIndex, bool enabled) {
   if (brushIndex < 0 ||
       brushIndex >= static_cast<int>(this->Colliders.size()))
     return;
-  this->Colliders[static_cast<std::size_t>(brushIndex)].Enabled = enabled;
+  this->Colliders[static_cast<std::size_t>(brushIndex)].enabled = enabled;
 }
 
 // -------------------------------------------------------------------------
@@ -39,117 +39,188 @@ physics::MoveResult physics::CollisionWorld::Move(
 
   // X
   if (delta.x != 0.0f) {
-    body.Position.x += delta.x;
-    float resolved = body.Position.x;
+    body.position.x += delta.x;
+    float resolved = body.position.x;
     bool hit = false;
 
     for (const Collider &collider : this->Colliders) {
-      if (!collider.Enabled ||
-          !Overlaps(BodyAabb(body), collider.Box))
+      if (!collider.enabled ||
+          !Overlaps(BodyAabb(body), collider.box))
         continue;
 
       if (delta.x > 0.0f) {
-        resolved = std::min(resolved, collider.Box.Min.x -
-                                          body.HalfExtents.x);
+        resolved = std::min(resolved, collider.box.min.x -
+                                          body.halfExtents.x);
       } else {
-        resolved = std::max(resolved, collider.Box.Max.x +
-                                          body.HalfExtents.x);
+        resolved = std::max(resolved, collider.box.max.x +
+                                          body.halfExtents.x);
       } // end if
       hit = true;
 
       Contact contact;
-      contact.BrushIndex = collider.BrushIndex;
-      contact.Normal = glm::vec3((delta.x > 0.0f) ? -1.0f : 1.0f, 0.0f, 0.0f);
+      contact.brushIndex = collider.brushIndex;
+      contact.normal = glm::vec3((delta.x > 0.0f) ? -1.0f : 1.0f, 0.0f, 0.0f);
       // how far the body has to move to stop overlapping
-      contact.Depth = std::abs(body.Position.x - resolved);
-      result.Contacts.push_back(contact);
+      contact.depth = std::abs(body.position.x - resolved);
+      result.contacts.push_back(contact);
     } // end for
 
     if (hit) {
-      body.Position.x = resolved;
-      body.Velocity.x = 0.0f;
-      result.HitWall = true;
+      body.position.x = resolved;
+      body.velocity.x = 0.0f;
+      result.hitWall = true;
     } // end if
   } // end if
 
   // Z
   if (delta.z != 0.0f) {
-    body.Position.z += delta.z;
-    float resolved = body.Position.z;
+    body.position.z += delta.z;
+    float resolved = body.position.z;
     bool hit = false;
 
     for (const Collider &collider : this->Colliders) {
-      if (!collider.Enabled ||
-          !Overlaps(BodyAabb(body), collider.Box))
+      if (!collider.enabled ||
+          !Overlaps(BodyAabb(body), collider.box))
         continue;
 
       if (delta.z > 0.0f) {
-        resolved = std::min(resolved, collider.Box.Min.z -
-                                          body.HalfExtents.z);
+        resolved = std::min(resolved, collider.box.min.z -
+                                          body.halfExtents.z);
       } else {
-        resolved = std::max(resolved, collider.Box.Max.z +
-                                          body.HalfExtents.z);
+        resolved = std::max(resolved, collider.box.max.z +
+                                          body.halfExtents.z);
       } // end if
       hit = true;
 
       Contact contact;
-      contact.BrushIndex = collider.BrushIndex;
-      contact.Normal = glm::vec3(0.0f, 0.0f, (delta.z > 0.0f) ? -1.0f : 1.0f);
-      contact.Depth = std::abs(body.Position.z - resolved);
-      result.Contacts.push_back(contact);
+      contact.brushIndex = collider.brushIndex;
+      contact.normal = glm::vec3(0.0f, 0.0f, (delta.z > 0.0f) ? -1.0f : 1.0f);
+      contact.depth = std::abs(body.position.z - resolved);
+      result.contacts.push_back(contact);
     } // end for
 
     if (hit) {
-      body.Position.z = resolved;
-      body.Velocity.z = 0.0f;
-      result.HitWall = true;
+      body.position.z = resolved;
+      body.velocity.z = 0.0f;
+      result.hitWall = true;
     } // end if
   } // end if
 
   // Y
   if (delta.y != 0.0f) {
-    body.Position.y += delta.y;
-    float resolved = body.Position.y;
+    body.position.y += delta.y;
+    float resolved = body.position.y;
     bool ground = false;
     bool ceiling = false;
 
     for (const Collider &collider : this->Colliders) {
-      if (!collider.Enabled ||
-          !Overlaps(BodyAabb(body), collider.Box))
+      if (!collider.enabled ||
+          !Overlaps(BodyAabb(body), collider.box))
         continue;
 
       if (delta.y <= 0.0f) {
-        resolved = std::max(resolved, collider.Box.Max.y +
-                                          body.HalfExtents.y);
+        resolved = std::max(resolved, collider.box.max.y +
+                                          body.halfExtents.y);
         ground = true;
 
         Contact contact;
-        contact.BrushIndex = collider.BrushIndex;
-        contact.Normal = glm::vec3(0.0f, 1.0f, 0.0f);
-        contact.Depth = std::abs(body.Position.y - resolved);
-        result.Contacts.push_back(contact);
+        contact.brushIndex = collider.brushIndex;
+        contact.normal = glm::vec3(0.0f, 1.0f, 0.0f);
+        contact.depth = std::abs(body.position.y - resolved);
+        result.contacts.push_back(contact);
       } else {
-        resolved = std::min(resolved, collider.Box.Min.y -
-                                          body.HalfExtents.y);
+        resolved = std::min(resolved, collider.box.min.y -
+                                          body.halfExtents.y);
         ceiling = true;
 
         Contact contact;
-        contact.BrushIndex = collider.BrushIndex;
-        contact.Normal = glm::vec3(0.0f, -1.0f, 0.0f);
-        contact.Depth = std::abs(body.Position.y - resolved);
-        result.Contacts.push_back(contact);
+        contact.brushIndex = collider.brushIndex;
+        contact.normal = glm::vec3(0.0f, -1.0f, 0.0f);
+        contact.depth = std::abs(body.position.y - resolved);
+        result.contacts.push_back(contact);
       } // end if
     } // end for
 
-    body.Position.y = resolved;
+    body.position.y = resolved;
     if (ground || ceiling)
-      body.Velocity.y = 0.0f;
-    result.HitGround = ground;
-    result.HitCeiling = ceiling;
+      body.velocity.y = 0.0f;
+    result.hitGround = ground;
+    result.hitCeiling = ceiling;
   } // end if
 
-  body.OnGround = result.HitGround;
+  body.onGround = result.hitGround;
   return (result);
 }
 
+// -------------------------------------------------------------------------
+physics::RayHit physics::CollisionWorld::Raycast(const Ray &ray) const {
+  RayHit nearest;
+  bool found = false;
+
+  for (const Collider &collider : this->Colliders) {
+    if (!collider.enabled)
+      continue;
+
+    RayHit candidate;
+    if (!this->RaycastAabb(ray, collider.box, candidate))
+      continue;
+
+    candidate.brushIndex = collider.brushIndex;
+    candidate.hit = true;
+
+    if (!found || candidate.distance < nearest.distance) {
+      nearest = candidate;
+      found = true;
+    } // end if
+  } // end for
+
+  return (nearest);
+}
+
+// -------------------------------------------------------------------------
+bool physics::CollisionWorld::RaycastAabb(const Ray &ray, const Aabb &box,
+                                          RayHit &hit) const {
+  float tMin = 0.0f;
+  float tMax = ray.maxDistance;
+  int hitAxis = -1;
+
+  for (std::size_t axis = 0; axis < 3; ++axis) {
+    if (std::abs(ray.direction[axis]) < 1e-6f) {
+      if (ray.origin[axis] < box.min[axis] ||
+          ray.origin[axis] > box.max[axis])
+        return (false);
+    } else {
+      // Parametric distances where the ray enters and exits this slab.
+      float t1 = (box.min[axis] - ray.origin[axis]) / ray.direction[axis];
+      float t2 = (box.max[axis] - ray.origin[axis]) / ray.direction[axis];
+      // If Direction.axis < 0 the two values come  out reversed
+      if (t1 > t2)
+        std::swap(t1, t2);
+
+      if (t1 > tMin) {
+        tMin = t1;
+        hitAxis = static_cast<int>(axis);
+      } // end if
+      tMax = std::min(tMax, t2);
+
+      if (tMin > tMax)
+        return (false);
+    } // end if
+  } // end for
+
+  hit.hit = true;
+  hit.point = ray.origin + ray.direction * tMin;
+  hit.distance = tMin;
+  hit.normal = glm::vec3(0.0f);
+
+  if (hitAxis >= 0) {
+    const int axis = hitAxis;
+    hit.normal[axis] = (ray.direction[axis] > 0.0f) ? -1.0f : 1.0f;
+  } else {
+    // Origin is already inside the box: push back against the ray.
+    hit.normal = -ray.direction;
+  } // end if
+
+  return (true);
+}
 // eof - CollisionWorld.cxx

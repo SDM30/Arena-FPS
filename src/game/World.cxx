@@ -4,15 +4,18 @@
 
 #include <game/World.h>
 
+#include <algorithm>
+#include <cmath>
 #include <cstddef>
+#include <iostream>
 
 // -------------------------------------------------------------------------
 void game::World::Initialize(const level::Level &level) {
   this->player = physics::Body{};
-  this->player.Position =
-      level.playerSpawn + glm::vec3(0.0f, this->player.HalfExtents.y, 0.0f);
-  this->player.Velocity = glm::vec3(0.0f);
-  this->player.OnGround = false;
+  this->player.position =
+      level.playerSpawn + glm::vec3(0.0f, this->player.halfExtents.y, 0.0f);
+  this->player.velocity = glm::vec3(0.0f);
+  this->player.onGround = false;
 
   this->collision.Build(level.brushes);
 
@@ -21,12 +24,15 @@ void game::World::Initialize(const level::Level &level) {
   this->keysHeld.clear();
   this->levelComplete = false;
   this->nextLevel.clear();
+
+  this->weapon.cooldown = 0.0f;
+  this->weapon.lastHit = physics::RayHit{};
 }
 
 // -------------------------------------------------------------------------
 glm::vec3 game::World::PlayerFeet() const {
-  return (this->player.Position -
-          glm::vec3(0.0f, this->player.HalfExtents.y, 0.0f));
+  return (this->player.position -
+          glm::vec3(0.0f, this->player.halfExtents.y, 0.0f));
 }
 
 // -------------------------------------------------------------------------
@@ -38,6 +44,7 @@ void game::World::Update(float dt, const Input &input,
   this->_CheckDoors(level);
 
   this->movement.Step(this->player, input, this->collision, dt);
+  this->_UpdateWeapon(input, dt);
 
   this->_CheckExit(level);
 }
@@ -89,7 +96,7 @@ void game::World::_CheckDoors(const level::Level &level) {
       continue;
     if (!this->_HasKey(brush.doorKey))
       continue;
-    if (!this->_PlayerTouches(brush.Min, brush.Max, kDoorTouchMargin))
+    if (!this->_PlayerTouches(brush.min, brush.max, kDoorTouchMargin))
       continue;
 
     this->doorOpen[i] = true;
@@ -102,10 +109,40 @@ void game::World::_CheckExit(const level::Level &level) {
   if (!level.hasExit || this->levelComplete)
     return;
 
-  if (this->_PlayerTouches(level.exit.Min, level.exit.Max, 0.0f)) {
+  if (this->_PlayerTouches(level.exit.min, level.exit.max, 0.0f)) {
     this->levelComplete = true;
-    if (!level.exit.NextLevel.empty())
-      this->nextLevel = level.exit.NextLevel;
+    if (!level.exit.nextLevel.empty())
+      this->nextLevel = level.exit.nextLevel;
+  } // end if
+}
+
+// -------------------------------------------------------------------------
+void game::World::_UpdateWeapon(const Input &input, float dt) {
+  this->weapon.cooldown =
+      std::max(0.0f, this->weapon.cooldown - dt);
+
+  if (!input.firePressed || this->weapon.cooldown > 0.0f)
+    return;
+
+  const float directionLengthSq =
+      glm::dot(input.aimDirection, input.aimDirection);
+  if (directionLengthSq < 1e-8f)
+    return;
+
+  physics::Ray ray;
+  ray.origin = input.aimOrigin;
+  ray.direction = input.aimDirection / std::sqrt(directionLengthSq);
+  ray.maxDistance = this->weapon.range;
+
+  this->weapon.cooldown = this->weapon.fireInterval;
+  this->weapon.lastHit = this->collision.Raycast(ray);
+
+  if (this->weapon.lastHit.hit) {
+    std::cout << "hitscan: brush " << this->weapon.lastHit.brushIndex
+              << " at " << this->weapon.lastHit.distance << " m"
+              << std::endl;
+  } else {
+    std::cout << "hitscan: miss" << std::endl;
   } // end if
 }
 

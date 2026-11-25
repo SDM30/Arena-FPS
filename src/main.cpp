@@ -128,6 +128,8 @@ int main() {
   bool freeMoveKeyDown = false;
   bool jumpWasDown = false;
   bool pendingJumpPressed = false;
+  bool fireWasDown = false;
+  bool pendingFirePressed = false;
 
   bool rendererReady = false;
   {
@@ -144,23 +146,28 @@ int main() {
         glfwPollEvents();
 
         glm::vec3 wishDir(0.0f);
+        glm::vec3 aimOrigin(0.0f);
+        glm::vec3 aimDirection(0.0f, 0.0f, -1.0f);
         bool jumpHeld = false;
         bool moveUpHeld = false;
         bool moveDownHeld = false;
 
         // Toggle mouse capture (the game state machine will own this later).
+        const bool leftDown =
+            glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
         if (cursorCaptured &&
             glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
           cursorCaptured = false;
           glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        } else if (!cursorCaptured &&
-                   glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) ==
-                       GLFW_PRESS) {
+        } else if (!cursorCaptured && leftDown) {
           cursorCaptured = true;
           firstMouseFrame = true;
           glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
           glfwGetCursorPos(window, &lastMouseX, &lastMouseY);
+        } else if (cursorCaptured && leftDown && !fireWasDown) {
+          pendingFirePressed = true;
         } // end if
+        fireWasDown = leftDown;
 
         // Mouse look runs once per frame, not once per fixed step.
         if (cursorCaptured) {
@@ -202,6 +209,9 @@ int main() {
 
         } // end if
 
+        aimOrigin = camera.GetPosition();
+        aimDirection = camera.GetForward();
+
         // Debug renders
         const bool down = glfwGetKey(window, GLFW_KEY_F1) == GLFW_PRESS;
         if (down && !showCollisionKeyDown)
@@ -212,15 +222,15 @@ int main() {
         const bool autoBhopDown =
             glfwGetKey(window, GLFW_KEY_F2) == GLFW_PRESS;
         if (autoBhopDown && !autoBhopKeyDown)
-          world.movement.Config.AutoBhop = !world.movement.Config.AutoBhop;
+          world.movement.Config.autoBhop = !world.movement.Config.autoBhop;
         autoBhopKeyDown = autoBhopDown;
 
         // Toggle free movement (no gravity, no collision).
         const bool freeMoveDown =
             glfwGetKey(window, GLFW_KEY_F3) == GLFW_PRESS;
         if (freeMoveDown && !freeMoveKeyDown) {
-          world.movement.Config.FreeMove = !world.movement.Config.FreeMove;
-          world.player.Velocity = glm::vec3(0.0f);
+          world.movement.Config.freeMove = !world.movement.Config.freeMove;
+          world.player.velocity = glm::vec3(0.0f);
         } // end if
         freeMoveKeyDown = freeMoveDown;
 
@@ -234,14 +244,18 @@ int main() {
         accumulator += frameTime;
 
         while (accumulator >= kFixedStep) {
-          // TODO(6): update weapons, projectiles and damage.
+          // TODO(6): projectiles, damage, enemies and weapon effects.
           game::Input input;
-          input.WishDir = wishDir;
-          input.JumpHeld = jumpHeld;
-          input.JumpPressed = pendingJumpPressed;
-          input.MoveUp = moveUpHeld;
-          input.MoveDown = moveDownHeld;
+          input.wishDir = wishDir;
+          input.jumpHeld = jumpHeld;
+          input.jumpPressed = pendingJumpPressed;
+          input.moveUp = moveUpHeld;
+          input.moveDown = moveDownHeld;
+          input.firePressed = pendingFirePressed;
+          input.aimOrigin = aimOrigin;
+          input.aimDirection = aimDirection;
           pendingJumpPressed = false;
+          pendingFirePressed = false;
 
           world.Update(static_cast<float>(kFixedStep), input, loadedLevel);
           accumulator -= kFixedStep;
@@ -291,10 +305,10 @@ int main() {
         std::snprintf(
             title, sizeof(title),
             "Arena FPS | pos=(%.2f, %.2f, %.2f) | vy=%.2f | %s | jump=%s | move=%s | keys=%zu | exit=%s",
-            feet.x, feet.y, feet.z, world.player.Velocity.y,
-            world.player.OnGround ? "grounded" : "airborne",
-            world.movement.Config.AutoBhop ? "auto" : "normal",
-            world.movement.Config.FreeMove ? "free" : "physics",
+            feet.x, feet.y, feet.z, world.player.velocity.y,
+            world.player.onGround ? "grounded" : "airborne",
+            world.movement.Config.autoBhop ? "auto" : "normal",
+            world.movement.Config.freeMove ? "free" : "physics",
             world.keysHeld.size(), world.levelComplete ? "yes" : "no");
         glfwSetWindowTitle(window, title);
 

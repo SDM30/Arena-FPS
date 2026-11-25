@@ -148,12 +148,12 @@ bool level::Level::Load(const std::string &lvlPath, std::string *error) {
 
     } else if (instruction == "brush") {
       Brush brush;
-      if (!_ReadVec3(line, brush.Min) || !_ReadVec3(line, brush.Max) ||
+      if (!_ReadVec3(line, brush.min) || !_ReadVec3(line, brush.max) ||
           !_AtEnd(line))
         return (_Fail(error, lvlPath, lineNumber,
                       "brush needs exactly minX minY minZ maxX maxY maxZ"));
-      if (brush.Min.x > brush.Max.x || brush.Min.y > brush.Max.y ||
-          brush.Min.z > brush.Max.z)
+      if (brush.min.x > brush.max.x || brush.min.y > brush.max.y ||
+          brush.min.z > brush.max.z)
         return (
             _Fail(error, lvlPath, lineNumber, "brush min is greater than max"));
       parsed.brushes.push_back(brush);
@@ -181,11 +181,11 @@ bool level::Level::Load(const std::string &lvlPath, std::string *error) {
 
     } else if (instruction == "exit") {
       ExitZone exit;
-      if (!_ReadVec3(line, exit.Min) || !_ReadVec3(line, exit.Max))
+      if (!_ReadVec3(line, exit.min) || !_ReadVec3(line, exit.max))
         return (_Fail(error, lvlPath, lineNumber,
                       "exit needs minX minY minZ maxX maxY maxZ [nextLevel]"));
-      if (exit.Min.x > exit.Max.x || exit.Min.y > exit.Max.y ||
-          exit.Min.z > exit.Max.z)
+      if (exit.min.x > exit.max.x || exit.min.y > exit.max.y ||
+          exit.min.z > exit.max.z)
         return (
             _Fail(error, lvlPath, lineNumber, "exit min is greater than max"));
 
@@ -193,12 +193,12 @@ bool level::Level::Load(const std::string &lvlPath, std::string *error) {
       // and "-" mean the exit only completes the level.
       line >> std::ws;
       if (!line.eof()) {
-        if (!(line >> exit.NextLevel) || !_AtEnd(line))
+        if (!(line >> exit.nextLevel) || !_AtEnd(line))
           return (_Fail(error, lvlPath, lineNumber,
                         "exit needs minX minY minZ maxX maxY maxZ [nextLevel]"));
-        if (exit.NextLevel == "null" || exit.NextLevel == "none" ||
-            exit.NextLevel == "-")
-          exit.NextLevel.clear();
+        if (exit.nextLevel == "null" || exit.nextLevel == "none" ||
+            exit.nextLevel == "-")
+          exit.nextLevel.clear();
       } // end if
 
       parsed.exit = exit;

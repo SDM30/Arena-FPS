@@ -84,7 +84,7 @@ bool level::LoadObj(const std::string &filename, ObjMesh &mesh,
         faceNormal = _FaceNormal(p0, p1, p2);
 
       const unsigned int base =
-          static_cast<unsigned int>(mesh.Positions.size() / 3);
+          static_cast<unsigned int>(mesh.positions.size() / 3);
 
       for (std::size_t v = 0; v < faceVertexCount; ++v) {
         if (indexOffset + v >= source.indices.size())
@@ -105,26 +105,26 @@ bool level::LoadObj(const std::string &filename, ObjMesh &mesh,
                              attrib.normals[at + 2]);
         } // end if
 
-        mesh.Positions.push_back(position.x);
-        mesh.Positions.push_back(position.y);
-        mesh.Positions.push_back(position.z);
-        mesh.Normals.push_back(normal.x);
-        mesh.Normals.push_back(normal.y);
-        mesh.Normals.push_back(normal.z);
+        mesh.positions.push_back(position.x);
+        mesh.positions.push_back(position.y);
+        mesh.positions.push_back(position.z);
+        mesh.normals.push_back(normal.x);
+        mesh.normals.push_back(normal.y);
+        mesh.normals.push_back(normal.z);
       } // end for
 
       // Fan triangulation (tinyobjloader usually returns triangles already).
       for (std::size_t v = 1; v + 1 < faceVertexCount; ++v) {
-        mesh.Indices.push_back(base);
-        mesh.Indices.push_back(base + static_cast<unsigned int>(v));
-        mesh.Indices.push_back(base + static_cast<unsigned int>(v + 1));
+        mesh.indices.push_back(base);
+        mesh.indices.push_back(base + static_cast<unsigned int>(v));
+        mesh.indices.push_back(base + static_cast<unsigned int>(v + 1));
       } // end for
 
       indexOffset += faceVertexCount;
     } // end for
   } // end for
 
-  if (mesh.Positions.empty() || mesh.Indices.empty())
+  if (mesh.positions.empty() || mesh.indices.empty())
     return (fail("'" + filename + "' contains no triangle geometry"));
 
   return (true);

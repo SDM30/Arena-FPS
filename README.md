@@ -43,14 +43,15 @@ cmake --build build -j
 | Look | Mouse |
 | Move | `WASD` |
 | Jump | `Space` |
+| Fire hitscan | Left click (cursor captured) |
 | Toggle auto-bhop / normal jump | `F2` |
 | Toggle free movement (no physics) | `F3` |
 | Free move up / down | `Space` / `Left Ctrl` |
 | Collision debug | `F1` |
 | Release the cursor | `Esc` |
-| Recapture the cursor | Left click |
+| Recapture the cursor | Left click (cursor released) |
 
-Shooting, traps and enemies are added in the following milestones.
+Projectiles, damage and enemies are added in the following milestones.
 
 ## Structure
 

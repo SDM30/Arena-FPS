@@ -15,30 +15,34 @@ class CollisionWorld;
 namespace game {
 // Per-step input snapshot produced by main.cpp.
 struct Input {
-  glm::vec3 WishDir{0.0f};
-  bool JumpPressed = false;
-  bool JumpHeld = false;
+  glm::vec3 wishDir{0.0f};
+  bool jumpPressed = false;
+  bool jumpHeld = false;
   // Free-movement vertical controls (Space / Left Ctrl).
-  bool MoveUp = false;
-  bool MoveDown = false;
+  bool moveUp = false;
+  bool moveDown = false;
+  // Hitscan aim snapshot.
+  bool firePressed = false;
+  glm::vec3 aimOrigin{0.0f};
+  glm::vec3 aimDirection{0.0f, 0.0f, -1.0f};
 };
 
 // Tuning values inspired by Quake 1, scaled to metres.
 struct MovementConfig {
-  float MaxSpeed = 8.0f;
-  float GroundAccelerate = 10.0f;
-  float AirAccelerate = 10.0f;
-  float Friction = 6.0f;
-  float StopSpeed = 2.5f;
-  float JumpSpeed = 6.9f;
-  float MaxFallSpeed = 50.0f;
+  float maxSpeed = 8.0f;
+  float groundAccelerate = 10.0f;
+  float airAccelerate = 10.0f;
+  float friction = 6.0f;
+  float stopSpeed = 2.5f;
+  float jumpSpeed = 6.9f;
+  float maxFallSpeed = 50.0f;
   // Quake clamps the air-acceleration wish speed to a small value.
-  float AirWishSpeedCap = 0.8f;
+  float airWishSpeedCap = 0.8f;
   // Held jump re-jumps on landing.
-  bool AutoBhop = false;
+  bool autoBhop = false;
   // Debug/free camera.
-  bool FreeMove = false;
-  float FreeMoveSpeed = 15.0f;
+  bool freeMove = false;
+  float freeMoveSpeed = 15.0f;
 };
 
 class QPlayerMovement {

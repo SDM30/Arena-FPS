@@ -13,11 +13,11 @@ namespace level {
  * flat xyz arrays (one normal per position) ready for gl::Mesh::Upload.
  */
 struct ObjMesh {
-  std::vector<float> Positions;
-  std::vector<float> Normals;
-  std::vector<unsigned int> Indices;
+  std::vector<float> positions;
+  std::vector<float> normals;
+  std::vector<unsigned int> indices;
 
-  bool IsEmpty() const { return (this->Indices.empty()); }
+  bool IsEmpty() const { return (this->indices.empty()); }
 };
 
 /**

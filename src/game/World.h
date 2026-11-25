@@ -15,6 +15,14 @@
 #include <vector>
 
 namespace game {
+struct WeaponState {
+  float cooldown = 0.0f;
+  float fireInterval = 0.15f;
+  int damage = 25;
+  float range = 100.0f;
+  physics::RayHit lastHit;
+};
+
 struct World {
   // Moving player body. Position is the center of its AABB.
   physics::Body player;
@@ -22,8 +30,11 @@ struct World {
   // Static collision geometry copied from the level brushes.
   physics::CollisionWorld collision;
 
-  // Quake-style movement rules and tuning (including AutoBhop).
+  // Quake-style movement rules and tuning (including autoBhop).
   QPlayerMovement movement;
+
+  // Hitscan weapon state.
+  WeaponState weapon;
 
   // Runtime flags, one entry per level definition. The level itself stays
   // immutable; restarting it only requires calling Initialize again.
@@ -61,6 +72,7 @@ private:
   void _CheckKeyPickups(const level::Level &level);
   void _CheckDoors(const level::Level &level);
   void _CheckExit(const level::Level &level);
+  void _UpdateWeapon(const Input &input, float dt);
 };
 } // namespace game
 

@@ -166,8 +166,8 @@ bool render::SceneRenderer::LoadLevel(const level::Level &level,
   if (error != nullptr)
     error->clear();
 
-  if (!this->LevelMesh.Upload(level.mesh.Positions, level.mesh.Normals,
-                              level.mesh.Indices))
+  if (!this->LevelMesh.Upload(level.mesh.positions, level.mesh.normals,
+                              level.mesh.indices))
     return (_Fail(error, "could not upload the level mesh"));
 
   return (true);
@@ -251,7 +251,7 @@ void render::SceneRenderer::_DrawTraps(const level::Level &level) const {
     const level::Brush &brush = level.brushes[i];
     if (brush.trapDps <= 0)
       continue;
-    this->_DrawBox(brush.Min, brush.Max, glm::vec3(1.0f, 0.2f, 0.2f));
+    this->_DrawBox(brush.min, brush.max, glm::vec3(1.0f, 0.2f, 0.2f));
   } // end for
 
   glDisable(GL_POLYGON_OFFSET_FILL);
@@ -264,7 +264,7 @@ void render::SceneRenderer::_DrawDoors(const level::Level &level,
     const level::Brush &brush = level.brushes[i];
     if (brush.doorKey < 0 || world.doorOpen[i])
       continue;
-    this->_DrawBox(brush.Min, brush.Max, glm::vec3(0.2f, 0.45f, 1.0f));
+    this->_DrawBox(brush.min, brush.max, glm::vec3(0.2f, 0.45f, 1.0f));
   } // end for
 }
 
@@ -294,8 +294,8 @@ void render::SceneRenderer::_DrawBrushes(const level::Level &level,
       continue;
 
     const level::Brush &brush = level.brushes[i];
-    const glm::vec3 center = (brush.Min + brush.Max) * 0.5f;
-    const glm::vec3 size = brush.Max - brush.Min;
+    const glm::vec3 center = (brush.min + brush.max) * 0.5f;
+    const glm::vec3 size = brush.max - brush.min;
 
     glm::mat4 model = glm::translate(glm::mat4(1.0f), center);
     model = glm::scale(model, size);
@@ -318,7 +318,7 @@ void render::SceneRenderer::_DrawExit(const level::Level &level) const {
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glDepthMask(GL_FALSE);
 
-  this->_DrawBox(level.exit.Min, level.exit.Max,
+  this->_DrawBox(level.exit.min, level.exit.max,
                  glm::vec3(0.2f, 1.0f, 0.3f), false, 0.35f);
 
   glDepthMask(GL_TRUE);
