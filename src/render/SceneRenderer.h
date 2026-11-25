@@ -65,6 +65,7 @@ private:
   void _DrawTraps(const level::Level &level) const;
   void _DrawDoors(const level::Level &level, const game::World &world) const;
   void _DrawKeys(const level::Level &level, const game::World &world) const;
+  void _DrawEnemies(const game::World &world) const;
   void _DrawBrushes(const level::Level &level,
                     const game::World &world) const;
   void _DrawExit(const level::Level &level) const;

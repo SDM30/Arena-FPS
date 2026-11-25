@@ -1,0 +1,46 @@
+player 16 0 -0.5
+
+# --- floor ---
+# 0 main room
+brush   0 -0.5 -30    32 0 0
+# 1 corridor
+brush  10 -0.5 -70    22 0 -30
+
+# --- main room walls (3 units tall: no ceiling) ---
+# 2 north / start wall (z = 0)
+brush   0 0 0         32 3 0.5
+# 3 east wall (x = 32)
+brush  32 0 -30       32.5 3 0
+# 4 west wall (x = 0)
+brush  -0.5 0 -30     0 3 0
+# 5 south wall, left of the corridor
+brush   0 0 -30.5     10 3 -30
+# 6 south wall, right of the corridor
+brush  22 0 -30.5     32 3 -30
+
+# --- corridor walls ---
+# 7 west wall (x = 10)
+brush   9.5 0 -70     10 3 -30
+# 8 east wall (x = 22)
+brush  22 0 -70       22.5 3 -30
+# 9 end wall (z = -70)
+brush  10 0 -70.5     22 3 -70
+
+# --- door at the corridor center ---
+# 10 door panel, centered on z = -50
+brush  10 0 -50.25    22 2 -49.75
+door 10 1
+
+# Key in the center of the main room.
+key 1 16 0.5 -15
+
+# Enemies
+# Melee patrols the main room.
+enemy melee 16 0 -20   16 0 -25
+# Ranged patrols behind the door, near the exit.
+enemy ranged 16 0 -60  16 0 -55
+
+# Exit at the far end of the corridor.
+exit 12 0 -69.5  20 2 -68.5
+
+light 16 1.8 -15  1 1 1  1.0

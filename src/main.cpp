@@ -89,10 +89,10 @@ int main() {
     return (EXIT_FAILURE);
   } // end if
 
-  // Test level
+  // Loads first level
   level::Level loadedLevel;
   std::string error;
-  if (!loadedLevel.Load("levels/dev.lvl", &error)) {
+  if (!loadedLevel.Load("levels/level1.lvl", &error)) {
     std::cerr << "Could not load the level: " << error << std::endl;
     glfwDestroyWindow(window);
     glfwTerminate();
@@ -104,8 +104,7 @@ int main() {
   game::World world;
   world.Initialize(loadedLevel);
 
-  // First-person camera: the level stores the feet position, the camera sits
-  // at eye height above it.
+  // the level stores the feet position, the camera sits at eye height above it.
   gl::Camera camera(world.PlayerFeet() + glm::vec3(0.0f, kEyeHeight, 0.0f),
                     -90.0f, 0.0f);
 
@@ -244,7 +243,7 @@ int main() {
         accumulator += frameTime;
 
         while (accumulator >= kFixedStep) {
-          // TODO(6): projectiles, damage, enemies and weapon effects.
+          // TODO(6): projectiles, enemy variety and weapon effects.
           game::Input input;
           input.wishDir = wishDir;
           input.jumpHeld = jumpHeld;
@@ -304,8 +303,9 @@ int main() {
         const glm::vec3 feet = world.PlayerFeet();
         std::snprintf(
             title, sizeof(title),
-            "Arena FPS | pos=(%.2f, %.2f, %.2f) | vy=%.2f | %s | jump=%s | move=%s | keys=%zu | exit=%s",
-            feet.x, feet.y, feet.z, world.player.velocity.y,
+            "Arena FPS | pos=(%.2f, %.2f, %.2f) | hp=%d/%d | vy=%.2f | %s | jump=%s | move=%s | keys=%zu | exit=%s",
+            feet.x, feet.y, feet.z, world.playerHealth.current,
+            world.playerHealth.maximum, world.player.velocity.y,
             world.player.onGround ? "grounded" : "airborne",
             world.movement.Config.autoBhop ? "auto" : "normal",
             world.movement.Config.freeMove ? "free" : "physics",

@@ -53,6 +53,7 @@ add_executable(
   level/Level.cxx
   game/World.cxx
   game/QPlayerMovement.cxx
+  game/Enemy.cxx
   physics/CollisionWorld.cxx
   render/SceneRenderer.cpp
 )

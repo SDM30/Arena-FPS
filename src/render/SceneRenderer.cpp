@@ -210,6 +210,7 @@ void render::SceneRenderer::Draw(const gl::Camera &camera,
   this->_DrawTraps(level);
   this->_DrawDoors(level, world);
   this->_DrawKeys(level, world);
+  this->_DrawEnemies(world);
 
   if (options.showCollision)
     this->_DrawBrushes(level, world);
@@ -277,6 +278,39 @@ void render::SceneRenderer::_DrawKeys(const level::Level &level,
       continue;
     this->_DrawBox(level.keys[i].pos - half, level.keys[i].pos + half,
                    glm::vec3(1.0f, 0.85f, 0.1f));
+  } // end for
+}
+
+// -------------------------------------------------------------------------
+void render::SceneRenderer::_DrawEnemies(const game::World &world) const {
+  for (const game::Enemy &enemy : world.enemies) {
+    if (!enemy.health.IsAlive())
+      continue;
+
+    glm::vec3 color(0.7f, 0.7f, 0.7f);
+    switch (enemy.type) {
+    case game::EnemyType::Melee:
+      color = glm::vec3(0.85f, 0.35f, 0.25f);
+      break;
+    case game::EnemyType::Ranged:
+      color = glm::vec3(0.25f, 0.70f, 0.35f);
+      break;
+    case game::EnemyType::Tank:
+      color = glm::vec3(0.30f, 0.45f, 0.85f);
+      break;
+    } // end switch
+
+    if (enemy.state == game::EnemyState::Chase)
+      color = glm::vec3(1.0f, 0.80f, 0.20f);
+    else if (enemy.state == game::EnemyState::Attack)
+      color = glm::vec3(1.0f, 0.50f, 0.10f);
+
+    // Attack flash: red while the enemy is shooting or hitting.
+    if (enemy.flashTimer > 0.0f)
+      color = glm::vec3(1.0f, 0.10f, 0.10f);
+
+    this->_DrawBox(enemy.body.position - enemy.body.halfExtents,
+                   enemy.body.position + enemy.body.halfExtents, color);
   } // end for
 }
 
