@@ -43,6 +43,8 @@ struct Light {
 
 struct ExitZone {
   glm::vec3 Min{0.0f}, Max{0.0f};
+  // Level file to load after touching this exit. Empty means "no next level".
+  std::string NextLevel;
 };
 
 struct Level {

@@ -46,6 +46,11 @@ public:
   bool Initialize(const level::Level &level, std::string *error);
 
   /**
+   * Uploads a new level mesh without rebuilding the shader or cube.
+   */
+  bool LoadLevel(const level::Level &level, std::string *error);
+
+  /**
    * Draws one frame from read-only level and world state. Does not update
    * simulation state and does not swap buffers.
    */

@@ -8,18 +8,6 @@
 #include <cmath>
 #include <cstddef>
 
-namespace {
-// -------------------------------------------------------------------------
-bool _Overlaps(const physics::Body &body, const physics::Aabb &box) {
-  return (body.Position.x - body.HalfExtents.x < box.Max.x &&
-          body.Position.x + body.HalfExtents.x > box.Min.x &&
-          body.Position.y - body.HalfExtents.y < box.Max.y &&
-          body.Position.y + body.HalfExtents.y > box.Min.y &&
-          body.Position.z - body.HalfExtents.z < box.Max.z &&
-          body.Position.z + body.HalfExtents.z > box.Min.z);
-}
-} // namespace
-
 // -------------------------------------------------------------------------
 void physics::CollisionWorld::Build(
     const std::vector<level::Brush> &brushes) {
@@ -56,7 +44,8 @@ physics::MoveResult physics::CollisionWorld::Move(
     bool hit = false;
 
     for (const Collider &collider : this->Colliders) {
-      if (!collider.Enabled || !_Overlaps(body, collider.Box))
+      if (!collider.Enabled ||
+          !Overlaps(BodyAabb(body), collider.Box))
         continue;
 
       if (delta.x > 0.0f) {
@@ -90,7 +79,8 @@ physics::MoveResult physics::CollisionWorld::Move(
     bool hit = false;
 
     for (const Collider &collider : this->Colliders) {
-      if (!collider.Enabled || !_Overlaps(body, collider.Box))
+      if (!collider.Enabled ||
+          !Overlaps(BodyAabb(body), collider.Box))
         continue;
 
       if (delta.z > 0.0f) {
@@ -124,7 +114,8 @@ physics::MoveResult physics::CollisionWorld::Move(
     bool ceiling = false;
 
     for (const Collider &collider : this->Colliders) {
-      if (!collider.Enabled || !_Overlaps(body, collider.Box))
+      if (!collider.Enabled ||
+          !Overlaps(BodyAabb(body), collider.Box))
         continue;
 
       if (delta.y <= 0.0f) {

@@ -15,6 +15,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <string>
+#include <utility>
 
 #include <glm/glm.hpp>
 
@@ -89,9 +90,9 @@ int main() {
   } // end if
 
   // Test level
-  level::Level devlevel;
+  level::Level loadedLevel;
   std::string error;
-  if (!devlevel.Load("levels/dev.lvl", &error)) {
+  if (!loadedLevel.Load("levels/dev.lvl", &error)) {
     std::cerr << "Could not load the level: " << error << std::endl;
     glfwDestroyWindow(window);
     glfwTerminate();
@@ -101,7 +102,7 @@ int main() {
   // Runtime state derived from the level data. The level itself stays
   // immutable, so restarting only requires calling Initialize again.
   game::World world;
-  world.Initialize(devlevel);
+  world.Initialize(loadedLevel);
 
   // First-person camera: the level stores the feet position, the camera sits
   // at eye height above it.
@@ -134,7 +135,7 @@ int main() {
     // is still current.
     render::SceneRenderer renderer;
     std::string renderError;
-    if (!renderer.Initialize(devlevel, &renderError)) {
+    if (!renderer.Initialize(loadedLevel, &renderError)) {
       error = renderError;
     } else {
       rendererReady = true;
@@ -242,9 +243,37 @@ int main() {
           input.MoveDown = moveDownHeld;
           pendingJumpPressed = false;
 
-          world.Update(static_cast<float>(kFixedStep), input);
+          world.Update(static_cast<float>(kFixedStep), input, loadedLevel);
           accumulator -= kFixedStep;
         } // end while
+
+        // Exit with a next-level name
+        if (!world.nextLevel.empty()) {
+          const std::string nextPath = world.nextLevel;
+          level::Level nextLevel;
+          std::string loadError;
+          if (nextLevel.Load(nextPath, &loadError)) {
+            loadedLevel = std::move(nextLevel);
+            world.Initialize(loadedLevel);
+
+            std::string uploadError;
+            if (!renderer.LoadLevel(loadedLevel, &uploadError)) {
+              std::cerr << "Could not upload the next level: " << uploadError
+                        << std::endl;
+              glfwSetWindowShouldClose(window, GLFW_TRUE);
+            } // end if
+
+            camera = gl::Camera(
+                world.PlayerFeet() + glm::vec3(0.0f, kEyeHeight, 0.0f),
+                -90.0f, 0.0f);
+            previousTime = glfwGetTime();
+            accumulator = 0.0;
+          } else {
+            std::cerr << "Could not load next level '" << nextPath
+                      << "': " << loadError << std::endl;
+            world.nextLevel.clear();
+          } // end if
+        } // end if
 
         // The simulation owns the feet position; the camera only reads it.
         camera.SetPosition(world.PlayerFeet() +
@@ -255,16 +284,18 @@ int main() {
 
         render::Options options;
         options.showCollision = showCollision;
-        renderer.Draw(camera, devlevel, world, width, height, options);
+        renderer.Draw(camera, loadedLevel, world, width, height, options);
 
-        char title[192];
+        char title[256];
         const glm::vec3 feet = world.PlayerFeet();
-        std::snprintf(title, sizeof(title),
-                      "Arena FPS | pos=(%.2f, %.2f, %.2f) | vy=%.2f | %s | jump=%s | move=%s",
-                      feet.x, feet.y, feet.z, world.player.Velocity.y,
-                      world.player.OnGround ? "grounded" : "airborne",
-                      world.movement.Config.AutoBhop ? "auto" : "normal",
-                      world.movement.Config.FreeMove ? "free" : "physics");
+        std::snprintf(
+            title, sizeof(title),
+            "Arena FPS | pos=(%.2f, %.2f, %.2f) | vy=%.2f | %s | jump=%s | move=%s | keys=%zu | exit=%s",
+            feet.x, feet.y, feet.z, world.player.Velocity.y,
+            world.player.OnGround ? "grounded" : "airborne",
+            world.movement.Config.AutoBhop ? "auto" : "normal",
+            world.movement.Config.FreeMove ? "free" : "physics",
+            world.keysHeld.size(), world.levelComplete ? "yes" : "no");
         glfwSetWindowTitle(window, title);
 
         glfwSwapBuffers(window);

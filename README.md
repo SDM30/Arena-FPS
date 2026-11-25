@@ -50,7 +50,7 @@ cmake --build build -j
 | Release the cursor | `Esc` |
 | Recapture the cursor | Left click |
 
-Shooting, keys and doors are added in the following milestones.
+Shooting, traps and enemies are added in the following milestones.
 
 ## Structure
 

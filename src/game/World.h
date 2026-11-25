@@ -11,6 +11,7 @@
 
 #include <glm/glm.hpp>
 
+#include <string>
 #include <vector>
 
 namespace game {
@@ -29,6 +30,11 @@ struct World {
   std::vector<bool> doorOpen;
   std::vector<bool> keyTaken;
   std::vector<int> keysHeld;
+  bool levelComplete = false;
+
+  // Set when the exit names a next level. main.cpp consumes it, reloads the
+  // level and calls Initialize again.
+  std::string nextLevel;
 
   /**
    * Copies the level's initial state into the runtime. Call it after
@@ -43,9 +49,18 @@ struct World {
   glm::vec3 PlayerFeet() const;
 
   /**
-   * Advances the player by one fixed step using the movement controller.
+   * Advances the player by one fixed step using the movement controller, then
+   * checks pickups, doors and the exit against the static level data.
    */
-  void Update(float dt, const Input &input);
+  void Update(float dt, const Input &input, const level::Level &level);
+
+private:
+  bool _PlayerTouches(const glm::vec3 &min, const glm::vec3 &max,
+                      float margin) const;
+  bool _HasKey(int keyId) const;
+  void _CheckKeyPickups(const level::Level &level);
+  void _CheckDoors(const level::Level &level);
+  void _CheckExit(const level::Level &level);
 };
 } // namespace game
 

@@ -152,12 +152,24 @@ bool render::SceneRenderer::Initialize(const level::Level &level,
   if (!this->Cube.Upload(positions, normals, indices))
     return (_Fail(error, "could not upload the cube mesh"));
 
+  if (!this->LoadLevel(level, error))
+    return (false);
+
+  glEnable(GL_DEPTH_TEST);
+  glClearColor(0.07f, 0.08f, 0.10f, 1.0f);
+  return (true);
+}
+
+// -------------------------------------------------------------------------
+bool render::SceneRenderer::LoadLevel(const level::Level &level,
+                                      std::string *error) {
+  if (error != nullptr)
+    error->clear();
+
   if (!this->LevelMesh.Upload(level.mesh.Positions, level.mesh.Normals,
                               level.mesh.Indices))
     return (_Fail(error, "could not upload the level mesh"));
 
-  glEnable(GL_DEPTH_TEST);
-  glClearColor(0.07f, 0.08f, 0.10f, 1.0f);
   return (true);
 }
 

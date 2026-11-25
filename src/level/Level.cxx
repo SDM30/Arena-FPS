@@ -6,7 +6,7 @@
 //   brush  minX minY minZ maxX maxY maxZ
 //   door   brushIndex keyId
 //   key    keyId x y z
-//   exit   minX minY minZ maxX maxY maxZ
+//   exit   minX minY minZ maxX maxY maxZ [nextLevel]
 //   trap   brushIndex damagePerSecond
 //   light  x y z r g b intensity
 //   enemy  type x y z [x2 y2 z2]
@@ -181,14 +181,26 @@ bool level::Level::Load(const std::string &lvlPath, std::string *error) {
 
     } else if (instruction == "exit") {
       ExitZone exit;
-      if (!_ReadVec3(line, exit.Min) || !_ReadVec3(line, exit.Max) ||
-          !_AtEnd(line))
+      if (!_ReadVec3(line, exit.Min) || !_ReadVec3(line, exit.Max))
         return (_Fail(error, lvlPath, lineNumber,
-                      "exit needs exactly minX minY minZ maxX maxY maxZ"));
+                      "exit needs minX minY minZ maxX maxY maxZ [nextLevel]"));
       if (exit.Min.x > exit.Max.x || exit.Min.y > exit.Max.y ||
           exit.Min.z > exit.Max.z)
         return (
             _Fail(error, lvlPath, lineNumber, "exit min is greater than max"));
+
+      // Optional next-level file, e.g. "levels/nivel2.lvl". "null", "none"
+      // and "-" mean the exit only completes the level.
+      line >> std::ws;
+      if (!line.eof()) {
+        if (!(line >> exit.NextLevel) || !_AtEnd(line))
+          return (_Fail(error, lvlPath, lineNumber,
+                        "exit needs minX minY minZ maxX maxY maxZ [nextLevel]"));
+        if (exit.NextLevel == "null" || exit.NextLevel == "none" ||
+            exit.NextLevel == "-")
+          exit.NextLevel.clear();
+      } // end if
+
       parsed.exit = exit;
       parsed.hasExit = true;
 
