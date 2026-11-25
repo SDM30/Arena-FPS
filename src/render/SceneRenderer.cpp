@@ -301,9 +301,9 @@ void render::SceneRenderer::_DrawEnemies(const game::World &world) const {
     } // end switch
 
     if (enemy.state == game::EnemyState::Chase)
-      color = glm::vec3(1.0f, 0.80f, 0.20f);
+      color = glm::vec3(1.0f, 0.55f, 0.0f);
     else if (enemy.state == game::EnemyState::Attack)
-      color = glm::vec3(1.0f, 0.50f, 0.10f);
+      color = glm::vec3(1.0f, 0.30f, 0.0f);
 
     // Damage taken: red. Attack/shot flash: magenta.
     if (enemy.hitFlashTimer > 0.0f)
