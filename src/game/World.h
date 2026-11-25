@@ -4,6 +4,7 @@
 #ifndef __game__World__h__
 #define __game__World__h__
 
+#include <game/QPlayerMovement.h>
 #include <level/Level.h>
 #include <physics/CollisionWorld.h>
 #include <physics/Physics.h>
@@ -19,6 +20,9 @@ struct World {
 
   // Static collision geometry copied from the level brushes.
   physics::CollisionWorld collision;
+
+  // Quake-style movement rules and tuning (including AutoBhop).
+  QPlayerMovement movement;
 
   // Runtime flags, one entry per level definition. The level itself stays
   // immutable; restarting it only requires calling Initialize again.
@@ -39,10 +43,9 @@ struct World {
   glm::vec3 PlayerFeet() const;
 
   /**
-   * Advances the player by one fixed step. Input and game rules will be added
-   * in the movement milestone.
+   * Advances the player by one fixed step using the movement controller.
    */
-  void Update(float dt);
+  void Update(float dt, const Input &input);
 };
 } // namespace game
 

@@ -9,10 +9,8 @@
 #include <vector>
 
 namespace physics {
-// Arena tuning: real gravity is -9.81; a stronger pull feels better for
-// jumping and falling in a small level.
+// Arena tuning: real gravity is -9.81; Quake's scaled gravity is about -20.
 constexpr float kGravity = -20.0f;
-constexpr float kMaxFallSpeed = 50.0f;
 
 // Rigid rectangular body for the player and, later, enemies and props.
 struct Body {

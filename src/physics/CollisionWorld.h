@@ -17,9 +17,9 @@ public:
   void Build(const std::vector<level::Brush> &brushes);
   void SetEnabled(int brushIndex, bool enabled);
 
-  // Applies gravity, moves the body vertically and resolves it against the
-  // static colliders. Horizontal movement is added in the next milestone.
-  MoveResult MoveBody(Body &body, float dt) const;
+  // Resolves one displacement against the static colliders, axis by axis.
+  // Movement policy (gravity, friction, jump) belongs to QPlayerMovement.
+  MoveResult Move(Body &body, const glm::vec3 &delta) const;
 
 private:
   std::vector<Collider> Colliders;

@@ -6,6 +6,7 @@
 // (see PLAN.md, sections 5 and 8).
 // =========================================================================
 
+#include <cmath>
 #include <glad/gl.h>
 
 #include <GLFW/glfw3.h>
@@ -29,6 +30,26 @@ constexpr double kFixedStep = 1.0 / 120.0;
 constexpr double kMaxFrameTime = 0.25;
 constexpr float kMouseSensitivity = 0.1f;
 constexpr float kEyeHeight = 1.7f;
+
+glm::vec3 _BuildWishDir(const gl::Camera &camera, float forwardInput,
+                        float rightInput) {
+  glm::vec3 wishDir(0.0f);
+  const float yaw = glm::radians(camera.GetYaw());
+  // Rotate the base forward and right vectors based on yaw change
+  const glm::vec3 forward(std::cos(yaw), 0.0f, std::sin(yaw));
+  const glm::vec3 right(-std::sin(yaw), 0.0f, std::cos(yaw));
+
+  // Compute wishdir
+  wishDir = forward * forwardInput + right * rightInput;
+  // wishdir * wishdir = same as pythagoras theorem
+  const float lengthSq = glm::dot(wishDir, wishDir);
+  if (lengthSq > 1e-8f)
+    wishDir /= std::sqrt(lengthSq);
+  else
+    wishDir = glm::vec3(0.0f);
+
+  return wishDir;
+}
 
 // -------------------------------------------------------------------------
 void _ErrorCallback(int code, const char *description) {
@@ -102,6 +123,9 @@ int main() {
 
   bool showCollision = false;
   bool showCollisionKeyDown = false;
+  bool autoBhopKeyDown = false;
+  bool jumpWasDown = false;
+  bool pendingJumpPressed = false;
 
   bool rendererReady = false;
   {
@@ -116,6 +140,9 @@ int main() {
 
       while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
+
+        glm::vec3 wishDir(0.0f);
+        bool jumpHeld = false;
 
         // Toggle mouse capture (the game state machine will own this later).
         if (cursorCaptured &&
@@ -148,6 +175,23 @@ int main() {
             camera.AddAngles(deltaX * kMouseSensitivity,
                              -deltaY * kMouseSensitivity);
           } // end if
+
+          // Movement inputs
+          const float forwardInput =     
+            (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS ? 1.0f : 0.0f) -
+            (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS ? 1.0f : 0.0f);
+
+          const float rightInput =     
+            (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS ? 1.0f : 0.0f) -
+            (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS ? 1.0f : 0.0f);
+
+          wishDir = _BuildWishDir(camera, forwardInput, rightInput);
+
+          jumpHeld = glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
+          if (jumpHeld && !jumpWasDown)
+            pendingJumpPressed = true;
+          jumpWasDown = jumpHeld;
+
         } // end if
 
         // Debug renders
@@ -155,6 +199,13 @@ int main() {
         if (down && !showCollisionKeyDown)
           showCollision = !showCollision;
         showCollisionKeyDown = down;
+
+        // Toggle auto-bhop (held jump) vs normal jump (fresh press).
+        const bool autoBhopDown =
+            glfwGetKey(window, GLFW_KEY_F2) == GLFW_PRESS;
+        if (autoBhopDown && !autoBhopKeyDown)
+          world.movement.Config.AutoBhop = !world.movement.Config.AutoBhop;
+        autoBhopKeyDown = autoBhopDown;
 
         // Fixed timestep: simulate in constant increments, render whenever we
         // can.
@@ -166,10 +217,14 @@ int main() {
         accumulator += frameTime;
 
         while (accumulator >= kFixedStep) {
-          // TODO(3): player input and horizontal movement.
-          // TODO(4): horizontal collision resolution.
           // TODO(6): update weapons, projectiles and damage.
-          world.Update(static_cast<float>(kFixedStep));
+          game::Input input;
+          input.WishDir = wishDir;
+          input.JumpHeld = jumpHeld;
+          input.JumpPressed = pendingJumpPressed;
+          pendingJumpPressed = false;
+
+          world.Update(static_cast<float>(kFixedStep), input);
           accumulator -= kFixedStep;
         } // end while
 
@@ -185,10 +240,12 @@ int main() {
         renderer.Draw(camera, devlevel, world, width, height, options);
 
         char title[128];
+        const glm::vec3 feet = world.PlayerFeet();
         std::snprintf(title, sizeof(title),
-                      "Arena FPS | feet y=%.2f | vy=%.2f | %s",
-                      world.PlayerFeet().y, world.player.Velocity.y,
-                      world.player.OnGround ? "grounded" : "airborne");
+                      "Arena FPS | pos=(%.2f, %.2f, %.2f) | vy=%.2f | %s | jump=%s",
+                      feet.x, feet.y, feet.z, world.player.Velocity.y,
+                      world.player.OnGround ? "grounded" : "airborne",
+                      world.movement.Config.AutoBhop ? "auto" : "normal");
         glfwSetWindowTitle(window, title);
 
         glfwSwapBuffers(window);

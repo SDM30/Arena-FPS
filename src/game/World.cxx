@@ -26,9 +26,8 @@ glm::vec3 game::World::PlayerFeet() const {
 }
 
 // -------------------------------------------------------------------------
-void game::World::Update(float dt) {
-  const physics::MoveResult result = this->collision.MoveBody(this->player, dt);
-  this->player.OnGround = result.HitGround;
+void game::World::Update(float dt, const Input &input) {
+  this->movement.Step(this->player, input, this->collision, dt);
 }
 
 // eof - World.cxx

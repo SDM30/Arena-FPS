@@ -41,10 +41,14 @@ cmake --build build -j
 | Action | Input |
 |---|---|
 | Look | Mouse |
+| Move | `WASD` |
+| Jump | `Space` |
+| Toggle auto-bhop / normal jump | `F2` |
+| Collision debug | `F1` |
 | Release the cursor | `Esc` |
 | Recapture the cursor | Left click |
 
-WASD movement, jumping and shooting are added in the following milestones.
+Shooting, keys and doors are added in the following milestones.
 
 ## Structure
 
