@@ -12,13 +12,14 @@
 namespace {
 // -------------------------------------------------------------------------
 game::EnemyStats _EnemyStatsFor(game::EnemyType type) {
+  // moveSpeed, sightRange, attackRange, attackInterval, flashTime, maxHealth, damage
   switch (type) {
   case game::EnemyType::Melee:
-    return {3.0f, 35.0f, 1.2f, 0.8f, 0.15f, 50, 10};
+    return {6.0f, 35.0f, 1.2f, 0.8f, 0.15f, 50, 10};
   case game::EnemyType::Ranged:
-    return {2.5f, 45.0f, 30.0f, 1.5f, 0.20f, 40, 8};
+    return {4.5f, 45.0f, 15.0f, 1.5f, 0.20f, 30, 8};
   case game::EnemyType::Tank:
-    return {1.8f, 45.0f, 30.0f, 2.0f, 0.25f, 120, 20};
+    return {1.8f, 35.0f, 20.0f, 2.0f, 0.25f, 120, 15};
   } // end switch
 
   return {3.0f, 35.0f, 1.2f, 0.8f, 0.15f, 50, 10};
@@ -27,6 +28,7 @@ game::EnemyStats _EnemyStatsFor(game::EnemyType type) {
 
 // -------------------------------------------------------------------------
 void game::World::Initialize(const level::Level &level) {
+  this->state = GameState::Playing;
   this->player = physics::Body{};
   this->player.position =
       level.playerSpawn + glm::vec3(0.0f, this->player.halfExtents.y, 0.0f);
@@ -46,6 +48,7 @@ void game::World::Initialize(const level::Level &level) {
   this->weapon.cooldown = 0.0f;
   this->weapon.lastHit = physics::RayHit{};
   this->weapon.lastEnemyIndex = -1;
+  this->trapDamageAccumulator = 0.0f;
 
   this->enemies.clear();
   for (const level::EnemySpawn &spawn : level.enemies) {
@@ -64,12 +67,26 @@ glm::vec3 game::World::PlayerFeet() const {
 // -------------------------------------------------------------------------
 void game::World::Update(float dt, const Input &input,
                          const level::Level &level) {
+  if (this->state != GameState::Playing)
+    return;
+
+  if (!this->playerHealth.IsAlive()) {
+    this->state = GameState::PlayerDead;
+    return;
+  } // end if
+
   // Pickups and doors run before movement so a door can open on the same step
   // the player reaches it.
   this->_CheckKeyPickups(level);
   this->_CheckDoors(level);
 
   this->movement.Step(this->player, input, this->collision, dt);
+  this->_CheckTraps(level, dt);
+
+  if (!this->playerHealth.IsAlive()) {
+    this->state = GameState::PlayerDead;
+    return;
+  } // end if
 
   for (Enemy &enemy : this->enemies) {
     const int damage = enemy.Update(this->player, this->collision, dt);
@@ -77,6 +94,11 @@ void game::World::Update(float dt, const Input &input,
       const int applied = this->playerHealth.ApplyDamage(damage);
       std::cout << "enemy hit: " << applied
                 << " player hp=" << this->playerHealth.current << std::endl;
+    } // end if
+
+    if (!this->playerHealth.IsAlive()) {
+      this->state = GameState::PlayerDead;
+      return;
     } // end if
   } // end for
 
@@ -141,15 +163,51 @@ void game::World::_CheckDoors(const level::Level &level) {
 }
 
 // -------------------------------------------------------------------------
-void game::World::_CheckExit(const level::Level &level) {
-  if (!level.hasExit || this->levelComplete)
+void game::World::_CheckTraps(const level::Level &level, float dt) {
+  constexpr float kTrapTouchMargin = 0.08f;
+
+  int totalDps = 0;
+  for (std::size_t i = 0; i < level.brushes.size(); ++i) {
+    const level::Brush &brush = level.brushes[i];
+    if (brush.trapDps <= 0)
+      continue;
+    if (!this->_PlayerTouches(brush.min, brush.max, kTrapTouchMargin))
+      continue;
+    totalDps += brush.trapDps;
+  } // end for
+
+  if (totalDps <= 0) {
+    this->trapDamageAccumulator = 0.0f;
+    return;
+  } // end if
+
+  this->trapDamageAccumulator += static_cast<float>(totalDps) * dt;
+  const int damage = static_cast<int>(this->trapDamageAccumulator);
+  if (damage <= 0)
     return;
 
-  if (this->_PlayerTouches(level.exit.min, level.exit.max, 0.0f)) {
-    this->levelComplete = true;
-    if (!level.exit.nextLevel.empty())
-      this->nextLevel = level.exit.nextLevel;
+  this->trapDamageAccumulator -= static_cast<float>(damage);
+  const int applied = this->playerHealth.ApplyDamage(damage);
+  if (applied > 0) {
+    std::cout << "trap hit: " << applied
+              << " player hp=" << this->playerHealth.current << std::endl;
   } // end if
+}
+
+// -------------------------------------------------------------------------
+void game::World::_CheckExit(const level::Level &level) {
+  if (this->levelComplete || level.exits.empty())
+    return;
+
+  for (const level::ExitZone &exit : level.exits) {
+    if (!this->_PlayerTouches(exit.min, exit.max, 0.0f))
+      continue;
+
+    this->levelComplete = true;
+    if (!exit.nextLevel.empty())
+      this->nextLevel = exit.nextLevel;
+    return;
+  } // end for
 }
 
 // -------------------------------------------------------------------------
@@ -203,7 +261,7 @@ void game::World::_UpdateWeapon(const Input &input, float dt) {
     Enemy &enemy = this->enemies[static_cast<std::size_t>(enemyIndex)];
     const int applied = enemy.health.ApplyDamage(this->weapon.damage);
     if (applied > 0)
-      enemy.flashTimer = std::max(enemy.flashTimer, 0.1f);
+      enemy.hitFlashTimer = std::max(enemy.hitFlashTimer, 0.1f);
 
     std::cout << "hitscan: enemy " << enemyIndex << " damage " << applied
               << " hp=" << enemy.health.current << std::endl;
@@ -229,6 +287,11 @@ void game::World::_BuildEnemy(const level::EnemySpawn &enemyData,
                             : 0;
   enemy.type = static_cast<EnemyType>(typeIndex);
   enemy.stats = _EnemyStatsFor(enemy.type);
+
+  if (enemy.type == EnemyType::Melee)
+    enemy.body.halfExtents = glm::vec3(0.3f);
+  else if (enemy.type == EnemyType::Tank)
+    enemy.body.halfExtents = glm::vec3(0.7f, 1.1f, 0.7f);
 
   enemy.body.position = enemyData.spawn +
                         glm::vec3(0.0f, enemy.body.halfExtents.y, 0.0f);

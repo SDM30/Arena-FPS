@@ -201,8 +201,7 @@ bool level::Level::Load(const std::string &lvlPath, std::string *error) {
           exit.nextLevel.clear();
       } // end if
 
-      parsed.exit = exit;
-      parsed.hasExit = true;
+      parsed.exits.push_back(exit);
 
     } else if (instruction == "trap") {
       _PendingTrap trap{lineNumber, -1, 0};
@@ -250,7 +249,7 @@ bool level::Level::Load(const std::string &lvlPath, std::string *error) {
     return (
         _Fail(error, lvlPath, 0, "the level does not define the player spawn"));
 
-  if (!parsed.hasExit)
+  if (parsed.exits.empty())
     return (_Fail(error, lvlPath, 0, "the level does not define an exit"));
 
   // Apply traps first so doors can detect a brush flagged as both.

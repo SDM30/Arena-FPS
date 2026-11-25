@@ -43,6 +43,7 @@ target_include_directories(
 )
 
 # Game executable
+set(IMGUI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui)
 add_executable(
   arena
   main.cpp
@@ -56,8 +57,20 @@ add_executable(
   game/Enemy.cxx
   physics/CollisionWorld.cxx
   render/SceneRenderer.cpp
+  ui/Hud.cpp
+  ${IMGUI_DIR}/imgui.cpp
+  ${IMGUI_DIR}/imgui_draw.cpp
+  ${IMGUI_DIR}/imgui_tables.cpp
+  ${IMGUI_DIR}/imgui_widgets.cpp
+  ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp
+  ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
 )
-target_include_directories(arena PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(
+  arena PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ${IMGUI_DIR}
+  ${IMGUI_DIR}/backends
+)
 target_link_libraries(arena PRIVATE glad glm tinyobjloader glfw OpenGL::GL)
 
 ## eof - CMakeLists.txt

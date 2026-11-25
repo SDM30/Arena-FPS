@@ -1,0 +1,110 @@
+player 16 0 -0.5
+
+# --- floors ---
+# 0 first room
+brush   0 -0.5 -30    32 0 0
+# 1 corridor
+brush  10 -0.5 -70    22 0 -30
+# 2 final room and the three exits
+brush  -8 -0.5 -125   42 0 -70
+
+# --- first room walls ---
+# 3 start wall (z = 0)
+brush   0 0 0         32 3 0.5
+# 4 east wall (x = 32)
+brush  32 0 -30       32.5 3 0
+# 5 west wall (x = 0)
+brush  -0.5 0 -30     0 3 0
+# 6 south wall, left of the corridor
+brush   0 0 -30.5     10 3 -30
+# 7 south wall, right of the corridor
+brush  22 0 -30.5     32 3 -30
+
+# --- corridor walls (traps) ---
+# 8 west wall (x = 10)
+brush   9.5 0 -70     10 3 -30
+# 9 east wall (x = 22)
+brush  22 0 -70       22.5 3 -30
+trap 8 15
+trap 9 15
+
+# --- final room ---
+# 10 wall left of the corridor entrance (z = -70)
+brush  -8 0 -70       10 3 -69.5
+# 11 wall right of the corridor entrance (z = -70)
+brush  22 0 -70       42 3 -69.5
+# 12 west wall (x = -8)
+brush  -8.5 0 -120    -8 3 -70
+# 13 east wall (x = 42)
+brush  42 0 -120      42.5 3 -70
+
+# back wall segments between the three dents
+# 14 left segment
+brush  -8 0 -120.5    2 3 -120
+# 15 between dents 1 and 2
+brush   7 0 -120.5    15 3 -120
+# 16 between dents 2 and 3
+brush  20 0 -120.5    27 3 -120
+# 17 right segment
+brush  32 0 -120.5    42 3 -120
+
+# dent side walls (left / right for each dent)
+# 18/19 dent 1: x 2..7
+brush   1.5 0 -125    2 3 -120
+brush   7 0 -125      7.5 3 -120
+# 20/21 dent 2: x 15..20
+brush  14.5 0 -125    15 3 -120
+brush  20 0 -125      20.5 3 -120
+# 22/23 dent 3: x 27..32
+brush  26.5 0 -125    27 3 -120
+brush  32 0 -125      32.5 3 -120
+
+# dent back walls
+# 24 dent 1
+brush   2 0 -125.5    7 3 -125
+# 25 dent 2
+brush  15 0 -125.5    20 3 -125
+# 26 dent 3
+brush  27 0 -125.5    32 3 -125
+
+# --- door in the middle of the tunnel ---
+# 27 door panel, centered on z = -50
+brush  10 0 -50.25    22 2 -49.75
+door 27 1
+
+# --- trap barricade in the final room (XZ plane) ---
+# 28 damaging floor strip; it does not block movement, so stepping on it does
+# not clip against a low solid box.
+brush  -8 -0.5 -96    42 0 -93
+trap 28 25
+
+# Key in the center of the first room.
+key 1 16 0.5 -15
+
+# --- first room: 1 tank and 2 ranged guard the key ---
+enemy tank   16 0 -24   16 0 -28
+enemy ranged 10 0 -18   10 0 -24
+enemy ranged 22 0 -18   22 0 -24
+
+# --- tunnel: 4 melee ---
+enemy melee 13 0 -36    13 0 -44
+enemy melee 19 0 -44    19 0 -36
+enemy melee 13 0 -56    13 0 -64
+enemy melee 19 0 -64    19 0 -56
+
+# --- final room: 2 tanks and 3 ranged behind the barricade ---
+enemy tank   0 0 -110    0 0 -116
+enemy tank  36 0 -110   36 0 -116
+enemy ranged 14 0 -108  14 0 -114
+enemy ranged 21 0 -114  21 0 -108
+enemy ranged 28 0 -108  28 0 -114
+
+# --- three exits in the three dents ---
+# Left: back to level 1.
+exit 2.5 0 -124.5   6.5 2 -123.5   levels/level1.lvl
+# Middle: restart level 2.
+exit 15.5 0 -124.5  19.5 2 -123.5  levels/level2.lvl
+# Right: no next level; touching it does nothing beyond completing the level.
+exit 27.5 0 -124.5  31.5 2 -123.5
+
+light 16 1.8 -15  1 1 1  1.0

@@ -36,11 +36,13 @@ key 1 16 0.5 -15
 
 # Enemies
 # Melee patrols the main room.
-enemy melee 16 0 -20   16 0 -25
+enemy melee 10 0 -20   16 0 -25
+enemy melee 20 0 -10   16 0 -25
 # Ranged patrols behind the door, near the exit.
 enemy ranged 16 0 -60  16 0 -55
-
+enemy ranged 13 0 -60  13 0 -55
+enemy ranged 19 0 -60  19 0 -55
 # Exit at the far end of the corridor.
-exit 12 0 -69.5  20 2 -68.5
+exit 12 0 -69.5  20 2 -68.5 levels/level2.lvl
 
 light 16 1.8 -15  1 1 1  1.0

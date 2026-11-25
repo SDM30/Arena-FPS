@@ -50,8 +50,9 @@ cmake --build build -j
 | Collision debug | `F1` |
 | Release the cursor | `Esc` |
 | Recapture the cursor | Left click (cursor released) |
+| Restart after death | `R` |
 
-Projectiles, damage and enemies are added in the following milestones.
+Projectiles, traps and enemy variety are added in the following milestones.
 
 ## Structure
 

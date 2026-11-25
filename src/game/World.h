@@ -17,16 +17,20 @@
 #include <vector>
 
 namespace game {
+enum class GameState { Playing, PlayerDead };
+
 struct WeaponState {
   float cooldown = 0.0f;
   float fireInterval = 0.15f;
   int damage = 25;
-  float range = 100.0f;
+  float range = 40.0f;
   physics::RayHit lastHit;
   int lastEnemyIndex = -1;
 };
 
 struct World {
+  GameState state = GameState::Playing;
+
   // Moving player body. Position is the center of its AABB.
   physics::Body player;
   Health playerHealth;
@@ -39,6 +43,9 @@ struct World {
 
   // Hitscan weapon state.
   WeaponState weapon;
+
+  // Fractional trap damage accumulated between fixed steps.
+  float trapDamageAccumulator = 0.0f;
 
   // Runtime flags, one entry per level definition. The level itself stays
   // immutable; restarting it only requires calling Initialize again.
@@ -78,6 +85,7 @@ private:
   bool _HasKey(int keyId) const;
   void _CheckKeyPickups(const level::Level &level);
   void _CheckDoors(const level::Level &level);
+  void _CheckTraps(const level::Level &level, float dt);
   void _CheckExit(const level::Level &level);
   void _UpdateWeapon(const Input &input, float dt);
   void _BuildEnemy(const level::EnemySpawn &enemyData, Enemy &enemy);

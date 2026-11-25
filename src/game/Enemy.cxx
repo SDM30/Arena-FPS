@@ -22,6 +22,7 @@ int game::Enemy::Update(const physics::Body &player,
 
   this->attackCooldown = std::max(0.0f, this->attackCooldown - dt);
   this->flashTimer = std::max(0.0f, this->flashTimer - dt);
+  this->hitFlashTimer = std::max(0.0f, this->hitFlashTimer - dt);
 
   const bool seesPlayer = this->_CanSee(player, collision);
   const float distance = this->_PlanarDistance(player.position);

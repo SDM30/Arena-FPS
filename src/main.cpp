@@ -23,6 +23,7 @@
 #include <gl/Camera.h>
 #include <level/Level.h>
 #include <render/SceneRenderer.h>
+#include <ui/Hud.h>
 
 namespace {
 constexpr int kWindowWidth = 1280;
@@ -92,7 +93,7 @@ int main() {
   // Loads first level
   level::Level loadedLevel;
   std::string error;
-  if (!loadedLevel.Load("levels/level1.lvl", &error)) {
+  if (!loadedLevel.Load("levels/level2.lvl", &error)) {
     std::cerr << "Could not load the level: " << error << std::endl;
     glfwDestroyWindow(window);
     glfwTerminate();
@@ -135,14 +136,32 @@ int main() {
     // GPU resources live for this scope and are released while the GL context
     // is still current.
     render::SceneRenderer renderer;
+    ui::Hud hud;
     std::string renderError;
+    std::string hudError;
     if (!renderer.Initialize(loadedLevel, &renderError)) {
       error = renderError;
+    } else if (!hud.Initialize(window, &hudError)) {
+      error = hudError;
     } else {
       rendererReady = true;
 
       while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
+
+        if (world.state == game::GameState::PlayerDead &&
+            glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
+          world.Initialize(loadedLevel);
+          camera = gl::Camera(
+              world.PlayerFeet() + glm::vec3(0.0f, kEyeHeight, 0.0f),
+              -90.0f, 0.0f);
+          previousTime = glfwGetTime();
+          accumulator = 0.0;
+          pendingJumpPressed = false;
+          pendingFirePressed = false;
+          jumpWasDown = false;
+          fireWasDown = false;
+        } // end if
 
         glm::vec3 wishDir(0.0f);
         glm::vec3 aimOrigin(0.0f);
@@ -298,23 +317,33 @@ int main() {
         render::Options options;
         options.showCollision = showCollision;
         renderer.Draw(camera, loadedLevel, world, width, height, options);
+        hud.Render(world);
 
         char title[256];
         const glm::vec3 feet = world.PlayerFeet();
-        std::snprintf(
-            title, sizeof(title),
-            "Arena FPS | pos=(%.2f, %.2f, %.2f) | hp=%d/%d | vy=%.2f | %s | jump=%s | move=%s | keys=%zu | exit=%s",
-            feet.x, feet.y, feet.z, world.playerHealth.current,
-            world.playerHealth.maximum, world.player.velocity.y,
-            world.player.onGround ? "grounded" : "airborne",
-            world.movement.Config.autoBhop ? "auto" : "normal",
-            world.movement.Config.freeMove ? "free" : "physics",
-            world.keysHeld.size(), world.levelComplete ? "yes" : "no");
+        if (world.state == game::GameState::PlayerDead) {
+          std::snprintf(title, sizeof(title),
+                        "Arena FPS | DEAD | press R to restart | hp=%d/%d",
+                        world.playerHealth.current,
+                        world.playerHealth.maximum);
+        } else {
+          std::snprintf(
+              title, sizeof(title),
+              "Arena FPS | pos=(%.2f, %.2f, %.2f) | hp=%d/%d | vy=%.2f | %s | jump=%s | move=%s | keys=%zu | exit=%s",
+              feet.x, feet.y, feet.z, world.playerHealth.current,
+              world.playerHealth.maximum, world.player.velocity.y,
+              world.player.onGround ? "grounded" : "airborne",
+              world.movement.Config.autoBhop ? "auto" : "normal",
+              world.movement.Config.freeMove ? "free" : "physics",
+              world.keysHeld.size(), world.levelComplete ? "yes" : "no");
+        } // end if
         glfwSetWindowTitle(window, title);
 
         glfwSwapBuffers(window);
       } // end while
     } // end if
+
+    hud.Shutdown();
   }   // renderer destroyed here, before the context
 
   glfwDestroyWindow(window);

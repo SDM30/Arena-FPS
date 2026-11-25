@@ -56,8 +56,7 @@ struct Level {
   std::vector<KeyPickup> keys;
   std::vector<EnemySpawn> enemies;
   std::vector<Light> lights;
-  ExitZone exit;
-  bool hasExit = false;
+  std::vector<ExitZone> exits;
   glm::vec3 playerSpawn{0.0f};
 
   /**

@@ -290,7 +290,7 @@ void render::SceneRenderer::_DrawEnemies(const game::World &world) const {
     glm::vec3 color(0.7f, 0.7f, 0.7f);
     switch (enemy.type) {
     case game::EnemyType::Melee:
-      color = glm::vec3(0.85f, 0.35f, 0.25f);
+      color = glm::vec3(0.0f, 0.8f, 0.8f);
       break;
     case game::EnemyType::Ranged:
       color = glm::vec3(0.25f, 0.70f, 0.35f);
@@ -305,9 +305,11 @@ void render::SceneRenderer::_DrawEnemies(const game::World &world) const {
     else if (enemy.state == game::EnemyState::Attack)
       color = glm::vec3(1.0f, 0.50f, 0.10f);
 
-    // Attack flash: red while the enemy is shooting or hitting.
-    if (enemy.flashTimer > 0.0f)
-      color = glm::vec3(1.0f, 0.10f, 0.10f);
+    // Damage taken: red. Attack/shot flash: magenta.
+    if (enemy.hitFlashTimer > 0.0f)
+      color = glm::vec3(1.0f, 0.0f, 0.0f);
+    else if (enemy.flashTimer > 0.0f)
+      color = glm::vec3(1.0f, 0.0f, 1.0f);
 
     this->_DrawBox(enemy.body.position - enemy.body.halfExtents,
                    enemy.body.position + enemy.body.halfExtents, color);
@@ -343,7 +345,7 @@ void render::SceneRenderer::_DrawBrushes(const level::Level &level,
 
 // -------------------------------------------------------------------------
 void render::SceneRenderer::_DrawExit(const level::Level &level) const {
-  if (!level.hasExit)
+  if (level.exits.empty())
     return;
 
   // Transparent passes go last. Keep depth testing so walls occlude the exit,
@@ -352,8 +354,10 @@ void render::SceneRenderer::_DrawExit(const level::Level &level) const {
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glDepthMask(GL_FALSE);
 
-  this->_DrawBox(level.exit.min, level.exit.max,
-                 glm::vec3(0.2f, 1.0f, 0.3f), false, 0.35f);
+  for (const level::ExitZone &exit : level.exits) {
+    this->_DrawBox(exit.min, exit.max, glm::vec3(0.2f, 1.0f, 0.3f), false,
+                   0.35f);
+  } // end for
 
   glDepthMask(GL_TRUE);
   glDisable(GL_BLEND);

@@ -40,7 +40,10 @@ struct Enemy {
 
   EnemyState state = EnemyState::Patrol;
   float attackCooldown = 0.0f;
+  // Attack/shot indicator (magenta).
   float flashTimer = 0.0f;
+  // Damage-taken indicator (red).
+  float hitFlashTimer = 0.0f;
 
   /**
    * Runs one fixed step of patrol/chase/attack behavior. Returns the damage
