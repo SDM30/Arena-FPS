@@ -124,6 +124,7 @@ int main() {
   bool showCollision = false;
   bool showCollisionKeyDown = false;
   bool autoBhopKeyDown = false;
+  bool freeMoveKeyDown = false;
   bool jumpWasDown = false;
   bool pendingJumpPressed = false;
 
@@ -143,6 +144,8 @@ int main() {
 
         glm::vec3 wishDir(0.0f);
         bool jumpHeld = false;
+        bool moveUpHeld = false;
+        bool moveDownHeld = false;
 
         // Toggle mouse capture (the game state machine will own this later).
         if (cursorCaptured &&
@@ -192,6 +195,10 @@ int main() {
             pendingJumpPressed = true;
           jumpWasDown = jumpHeld;
 
+          moveUpHeld = jumpHeld;
+          moveDownHeld =
+              glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS;
+
         } // end if
 
         // Debug renders
@@ -206,6 +213,15 @@ int main() {
         if (autoBhopDown && !autoBhopKeyDown)
           world.movement.Config.AutoBhop = !world.movement.Config.AutoBhop;
         autoBhopKeyDown = autoBhopDown;
+
+        // Toggle free movement (no gravity, no collision).
+        const bool freeMoveDown =
+            glfwGetKey(window, GLFW_KEY_F3) == GLFW_PRESS;
+        if (freeMoveDown && !freeMoveKeyDown) {
+          world.movement.Config.FreeMove = !world.movement.Config.FreeMove;
+          world.player.Velocity = glm::vec3(0.0f);
+        } // end if
+        freeMoveKeyDown = freeMoveDown;
 
         // Fixed timestep: simulate in constant increments, render whenever we
         // can.
@@ -222,6 +238,8 @@ int main() {
           input.WishDir = wishDir;
           input.JumpHeld = jumpHeld;
           input.JumpPressed = pendingJumpPressed;
+          input.MoveUp = moveUpHeld;
+          input.MoveDown = moveDownHeld;
           pendingJumpPressed = false;
 
           world.Update(static_cast<float>(kFixedStep), input);
@@ -239,13 +257,14 @@ int main() {
         options.showCollision = showCollision;
         renderer.Draw(camera, devlevel, world, width, height, options);
 
-        char title[128];
+        char title[192];
         const glm::vec3 feet = world.PlayerFeet();
         std::snprintf(title, sizeof(title),
-                      "Arena FPS | pos=(%.2f, %.2f, %.2f) | vy=%.2f | %s | jump=%s",
+                      "Arena FPS | pos=(%.2f, %.2f, %.2f) | vy=%.2f | %s | jump=%s | move=%s",
                       feet.x, feet.y, feet.z, world.player.Velocity.y,
                       world.player.OnGround ? "grounded" : "airborne",
-                      world.movement.Config.AutoBhop ? "auto" : "normal");
+                      world.movement.Config.AutoBhop ? "auto" : "normal",
+                      world.movement.Config.FreeMove ? "free" : "physics");
         glfwSetWindowTitle(window, title);
 
         glfwSwapBuffers(window);

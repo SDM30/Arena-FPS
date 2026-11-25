@@ -13,6 +13,11 @@
 void game::QPlayerMovement::Step(physics::Body &body, const Input &input,
                                  physics::CollisionWorld &collision,
                                  float dt) const {
+  if (this->Config.FreeMove) {
+    this->_FreeMove(body, input, dt);
+    return;
+  } // end if
+
   const bool wantsJump =
       this->Config.AutoBhop ? input.JumpHeld : input.JumpPressed;
 
@@ -36,6 +41,24 @@ void game::QPlayerMovement::Step(physics::Body &body, const Input &input,
   const glm::vec3 delta = body.Velocity * dt;
   const physics::MoveResult result = collision.Move(body, delta);
   body.OnGround = result.HitGround;
+}
+
+// -------------------------------------------------------------------------
+void game::QPlayerMovement::_FreeMove(physics::Body &body, const Input &input,
+                                      float dt) const {
+  glm::vec3 direction = input.WishDir;
+  direction.y = (input.MoveUp ? 1.0f : 0.0f) -
+                (input.MoveDown ? 1.0f : 0.0f);
+
+  const float lengthSq = glm::dot(direction, direction);
+  if (lengthSq > 1e-8f)
+    direction /= std::sqrt(lengthSq);
+  else
+    direction = glm::vec3(0.0f);
+
+  body.Velocity = direction * this->Config.FreeMoveSpeed;
+  body.Position += body.Velocity * dt;
+  body.OnGround = false;
 }
 
 // -------------------------------------------------------------------------
@@ -84,8 +107,7 @@ void game::QPlayerMovement::_AirAccelerate(physics::Body &body,
                                            const glm::vec3 &wishDir,
                                            float wishSpeed, float accelerate,
                                            float dt) const {
-  // Quake uses the full wish speed for the acceleration amount but clamps the
-  // speed it is willing to add along the wish direction.
+  // clamps the speed it is willing to add along the wish direction.
   const float clampedWishSpeed =
       std::min(wishSpeed, this->Config.AirWishSpeedCap);
   const float currentSpeed = glm::dot(body.Velocity, wishDir);

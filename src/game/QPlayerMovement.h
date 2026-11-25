@@ -18,6 +18,9 @@ struct Input {
   glm::vec3 WishDir{0.0f};
   bool JumpPressed = false;
   bool JumpHeld = false;
+  // Free-movement vertical controls (Space / Left Ctrl).
+  bool MoveUp = false;
+  bool MoveDown = false;
 };
 
 // Tuning values inspired by Quake 1, scaled to metres.
@@ -31,8 +34,11 @@ struct MovementConfig {
   float MaxFallSpeed = 50.0f;
   // Quake clamps the air-acceleration wish speed to a small value.
   float AirWishSpeedCap = 0.8f;
-  // Held jump re-jumps on landing; otherwise only a fresh press jumps.
+  // Held jump re-jumps on landing.
   bool AutoBhop = false;
+  // Debug/free camera.
+  bool FreeMove = false;
+  float FreeMoveSpeed = 15.0f;
 };
 
 class QPlayerMovement {
@@ -47,6 +53,7 @@ public:
             physics::CollisionWorld &collision, float dt) const;
 
 private:
+  void _FreeMove(physics::Body &body, const Input &input, float dt) const;
   void _ApplyFriction(physics::Body &body, float dt) const;
   void _Accelerate(physics::Body &body, const glm::vec3 &wishDir,
                    float wishSpeed, float accelerate, float dt) const;

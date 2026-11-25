@@ -44,6 +44,8 @@ cmake --build build -j
 | Move | `WASD` |
 | Jump | `Space` |
 | Toggle auto-bhop / normal jump | `F2` |
+| Toggle free movement (no physics) | `F3` |
+| Free move up / down | `Space` / `Left Ctrl` |
 | Collision debug | `F1` |
 | Release the cursor | `Esc` |
 | Recapture the cursor | Left click |
